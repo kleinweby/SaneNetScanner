@@ -1,0 +1,359 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA45B42715CED4D9004A8357 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B42615CED4D9004A8357 /* Cocoa.framework */; };
+		AA45B43115CED4D9004A8357 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA45B42F15CED4D9004A8357 /* InfoPlist.strings */; };
+		AA45B43315CED4D9004A8357 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA45B43215CED4D9004A8357 /* main.m */; };
+		AA45B43715CED4D9004A8357 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = AA45B43515CED4D9004A8357 /* Credits.rtf */; };
+		AA45B44715CED518004A8357 /* libsane-net.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B44615CED518004A8357 /* libsane-net.a */; };
+		AA45B44D15CEEB7B004A8357 /* CSSaneNetScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = AA45B44C15CEEB7B004A8357 /* CSSaneNetScanner.m */; };
+		AA45B45015CEED1E004A8357 /* ICD_Trampolins.m in Sources */ = {isa = PBXBuildFile; fileRef = AA45B44F15CEED1E004A8357 /* ICD_Trampolins.m */; };
+		AA45B45315CEF2D2004A8357 /* ICADevices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B45115CEF2CA004A8357 /* ICADevices.framework */; };
+		AA45B45815CEF529004A8357 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B45615CEF517004A8357 /* Carbon.framework */; };
+		AA45B46815CF0451004A8357 /* LoggerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AA45B46615CF0451004A8357 /* LoggerClient.m */; };
+		AA45B46B15CF04F1004A8357 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B46A15CF04F1004A8357 /* SystemConfiguration.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AA45B42215CED4D9004A8357 /* SaneNetScanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SaneNetScanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA45B42615CED4D9004A8357 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		AA45B42915CED4D9004A8357 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		AA45B42A15CED4D9004A8357 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		AA45B42B15CED4D9004A8357 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		AA45B42E15CED4D9004A8357 /* SaneNetScanner-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "SaneNetScanner-Info.plist"; sourceTree = "<group>"; };
+		AA45B43015CED4D9004A8357 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA45B43215CED4D9004A8357 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		AA45B43415CED4D9004A8357 /* SaneNetScanner-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SaneNetScanner-Prefix.pch"; sourceTree = "<group>"; };
+		AA45B43615CED4D9004A8357 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
+		AA45B44615CED518004A8357 /* libsane-net.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libsane-net.a"; sourceTree = "<group>"; };
+		AA45B44915CED525004A8357 /* sane.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sane.h; sourceTree = "<group>"; };
+		AA45B44A15CED525004A8357 /* saneopts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = saneopts.h; sourceTree = "<group>"; };
+		AA45B44B15CEEB7B004A8357 /* CSSaneNetScanner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CSSaneNetScanner.h; sourceTree = "<group>"; };
+		AA45B44C15CEEB7B004A8357 /* CSSaneNetScanner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CSSaneNetScanner.m; sourceTree = "<group>"; };
+		AA45B44E15CEED11004A8357 /* ICD_Trampolins.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ICD_Trampolins.h; sourceTree = "<group>"; };
+		AA45B44F15CEED1E004A8357 /* ICD_Trampolins.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ICD_Trampolins.m; sourceTree = "<group>"; };
+		AA45B45115CEF2CA004A8357 /* ICADevices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ICADevices.framework; path = System/Library/Frameworks/ICADevices.framework; sourceTree = SDKROOT; };
+		AA45B45615CEF517004A8357 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		AA45B46515CF0451004A8357 /* LoggerClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LoggerClient.h; sourceTree = "<group>"; };
+		AA45B46615CF0451004A8357 /* LoggerClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LoggerClient.m; sourceTree = "<group>"; };
+		AA45B46715CF0451004A8357 /* LoggerCommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LoggerCommon.h; sourceTree = "<group>"; };
+		AA45B46915CF0466004A8357 /* Log.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Log.h; sourceTree = "<group>"; };
+		AA45B46A15CF04F1004A8357 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA45B41F15CED4D9004A8357 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA45B46B15CF04F1004A8357 /* SystemConfiguration.framework in Frameworks */,
+				AA45B45815CEF529004A8357 /* Carbon.framework in Frameworks */,
+				AA45B45315CEF2D2004A8357 /* ICADevices.framework in Frameworks */,
+				AA45B42715CED4D9004A8357 /* Cocoa.framework in Frameworks */,
+				AA45B44715CED518004A8357 /* libsane-net.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA45B41715CED4D9004A8357 = {
+			isa = PBXGroup;
+			children = (
+				AA45B46A15CF04F1004A8357 /* SystemConfiguration.framework */,
+				AA45B42C15CED4D9004A8357 /* SaneNetScanner */,
+				AA45B44315CED4E9004A8357 /* sane */,
+				AA45B42515CED4D9004A8357 /* Frameworks */,
+				AA45B42315CED4D9004A8357 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA45B42315CED4D9004A8357 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B42215CED4D9004A8357 /* SaneNetScanner.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA45B42515CED4D9004A8357 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B45615CEF517004A8357 /* Carbon.framework */,
+				AA45B45115CEF2CA004A8357 /* ICADevices.framework */,
+				AA45B42615CED4D9004A8357 /* Cocoa.framework */,
+				AA45B42815CED4D9004A8357 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		AA45B42815CED4D9004A8357 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B42915CED4D9004A8357 /* AppKit.framework */,
+				AA45B42A15CED4D9004A8357 /* CoreData.framework */,
+				AA45B42B15CED4D9004A8357 /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		AA45B42C15CED4D9004A8357 /* SaneNetScanner */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B46415CF0446004A8357 /* Logging */,
+				AA45B42D15CED4D9004A8357 /* Supporting Files */,
+				AA45B44B15CEEB7B004A8357 /* CSSaneNetScanner.h */,
+				AA45B44C15CEEB7B004A8357 /* CSSaneNetScanner.m */,
+			);
+			path = SaneNetScanner;
+			sourceTree = "<group>";
+		};
+		AA45B42D15CED4D9004A8357 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B42E15CED4D9004A8357 /* SaneNetScanner-Info.plist */,
+				AA45B42F15CED4D9004A8357 /* InfoPlist.strings */,
+				AA45B43215CED4D9004A8357 /* main.m */,
+				AA45B43415CED4D9004A8357 /* SaneNetScanner-Prefix.pch */,
+				AA45B43515CED4D9004A8357 /* Credits.rtf */,
+				AA45B44E15CEED11004A8357 /* ICD_Trampolins.h */,
+				AA45B44F15CEED1E004A8357 /* ICD_Trampolins.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		AA45B44315CED4E9004A8357 /* sane */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B44815CED525004A8357 /* sane */,
+				AA45B44615CED518004A8357 /* libsane-net.a */,
+			);
+			path = sane;
+			sourceTree = "<group>";
+		};
+		AA45B44815CED525004A8357 /* sane */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B44915CED525004A8357 /* sane.h */,
+				AA45B44A15CED525004A8357 /* saneopts.h */,
+			);
+			path = sane;
+			sourceTree = "<group>";
+		};
+		AA45B46415CF0446004A8357 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				AA45B46515CF0451004A8357 /* LoggerClient.h */,
+				AA45B46615CF0451004A8357 /* LoggerClient.m */,
+				AA45B46715CF0451004A8357 /* LoggerCommon.h */,
+				AA45B46915CF0466004A8357 /* Log.h */,
+			);
+			name = Logging;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA45B42115CED4D9004A8357 /* SaneNetScanner */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA45B44015CED4D9004A8357 /* Build configuration list for PBXNativeTarget "SaneNetScanner" */;
+			buildPhases = (
+				AA45B41E15CED4D9004A8357 /* Sources */,
+				AA45B41F15CED4D9004A8357 /* Frameworks */,
+				AA45B42015CED4D9004A8357 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SaneNetScanner;
+			productName = SaneNetScanner;
+			productReference = AA45B42215CED4D9004A8357 /* SaneNetScanner.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA45B41915CED4D9004A8357 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = CS;
+				LastUpgradeCheck = 0440;
+				ORGANIZATIONNAME = "Christian Speich";
+			};
+			buildConfigurationList = AA45B41C15CED4D9004A8357 /* Build configuration list for PBXProject "SaneNetScanner" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = AA45B41715CED4D9004A8357;
+			productRefGroup = AA45B42315CED4D9004A8357 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA45B42115CED4D9004A8357 /* SaneNetScanner */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA45B42015CED4D9004A8357 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA45B43115CED4D9004A8357 /* InfoPlist.strings in Resources */,
+				AA45B43715CED4D9004A8357 /* Credits.rtf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA45B41E15CED4D9004A8357 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA45B43315CED4D9004A8357 /* main.m in Sources */,
+				AA45B44D15CEEB7B004A8357 /* CSSaneNetScanner.m in Sources */,
+				AA45B45015CEED1E004A8357 /* ICD_Trampolins.m in Sources */,
+				AA45B46815CF0451004A8357 /* LoggerClient.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		AA45B42F15CED4D9004A8357 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AA45B43015CED4D9004A8357 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		AA45B43515CED4D9004A8357 /* Credits.rtf */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AA45B43615CED4D9004A8357 /* en */,
+			);
+			name = Credits.rtf;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		AA45B43E15CED4D9004A8357 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		AA45B43F15CED4D9004A8357 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		AA45B44115CED4D9004A8357 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "SaneNetScanner/SaneNetScanner-Prefix.pch";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/sane\"";
+				INFOPLIST_FILE = "SaneNetScanner/SaneNetScanner-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/sane\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		AA45B44215CED4D9004A8357 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "SaneNetScanner/SaneNetScanner-Prefix.pch";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/sane\"";
+				INFOPLIST_FILE = "SaneNetScanner/SaneNetScanner-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/sane\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA45B41C15CED4D9004A8357 /* Build configuration list for PBXProject "SaneNetScanner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA45B43E15CED4D9004A8357 /* Debug */,
+				AA45B43F15CED4D9004A8357 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA45B44015CED4D9004A8357 /* Build configuration list for PBXNativeTarget "SaneNetScanner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA45B44115CED4D9004A8357 /* Debug */,
+				AA45B44215CED4D9004A8357 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AA45B41915CED4D9004A8357 /* Project object */;
+}

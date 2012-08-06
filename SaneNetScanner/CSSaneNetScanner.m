@@ -192,9 +192,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     @"ICAP_UNITS": @{ @"current": @0, @"default": @0, @"type": @"TWON_ENUMERATION", @"value": @[ @0, @1, @5 ] },
     
     } mutableCopy];
-    
-    SANE_Status status;
-    
+        
     self.saneOptions = [CSSaneOption saneOptionsForHandle:self.saneHandle];
     
     for (CSSaneOption* option in self.saneOptions) {
@@ -272,6 +270,8 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     [dict setObject:deviceDict
              forKey:@"device"];
     self.deviceProperties = deviceDict;
+    
+    LogMessageCompat(@"Updated parameters %@", dict);
     
     return noErr;
 }
@@ -367,7 +367,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     //
     //  Use a buffer size around 50KiB.
     //  the size will be aligned to row boundries
-    bufferdRows = MIN(50*1025 / parameters.bytes_per_line, parameters.lines);
+    bufferdRows = MIN(500*1025 / parameters.bytes_per_line, parameters.lines);
     bufferSize = bufferdRows * parameters.bytes_per_line;
     
     buffer = [NSMutableData dataWithLength:bufferSize];
@@ -403,12 +403,15 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
         [buffer setLength:filled];
 
         // Notify the image capture kit that we made progress
-        ICASendNotificationPB notePB = {
-            .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
-            (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
-            (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
-            } mutableCopy]
-        };
+        ICASendNotificationPB notePB = {};
+        
+        NSMutableDictionary* d = [@{
+         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+         (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
+                                         } mutableCopy];
+        
+        notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)d;
+
         
         // Send inline image data
         if (true) {

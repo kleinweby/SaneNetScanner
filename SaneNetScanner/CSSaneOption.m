@@ -12,6 +12,8 @@
 
 NSString* kSaneScanResolution = (NSString*)CFSTR(SANE_NAME_SCAN_RESOLUTION);
 NSString* kSaneScanMode = (NSString*)CFSTR(SANE_NAME_SCAN_MODE);
+NSString* kSanePreview = (NSString*)CFSTR(SANE_NAME_PREVIEW);
+
 
 @interface CSSaneOption ()
 

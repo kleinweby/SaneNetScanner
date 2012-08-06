@@ -12,6 +12,7 @@
 
 extern NSString* kSaneScanResolution;
 extern NSString* kSaneScanMode;
+extern NSString* kSanePreview;
 
 @interface CSSaneOption : NSObject
 

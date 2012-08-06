@@ -125,7 +125,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     
     SANE_Handle handle;
     SANE_Status status;
-    NSString* deviceName = @"10.0.1.5:mustek_usb:libusb:001:007";
+    NSString* deviceName = @"10.0.1.5:mustek_usb:libusb:001:008";
     
     status = sane_open([deviceName UTF8String], &handle);
     
@@ -188,7 +188,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
      @"ICAP_SUPPORTEDSIZES": @{ @"current": @1, @"default": @1, @"type": @"TWON_ENUMERATION", @"value": @[ @1, @2, @3, @4, @5, @10, @0 ]},
     
     
-    @"ICAP_UNITS": @{ @"current": @1, @"default": @0, @"type": @"TWON_ENUMERATION", @"value": @[ @0, @1, @5 ] },
+    @"ICAP_UNITS": @{ @"current": @0, @"default": @0, @"type": @"TWON_ENUMERATION", @"value": @[ @0, @1, @5 ] },
     
     } mutableCopy];
     
@@ -248,13 +248,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
             }
         }
         else if (strcmp(option->name, SANE_NAME_SCAN_TL_Y) == 0) {
-            double unitsPerInch;
             double height;
-            
-            if (option->unit == SANE_UNIT_MM)
-                unitsPerInch = 25.4;
-            else
-                unitsPerInch = 72.0;
             
             if (option->constraint_type == SANE_CONSTRAINT_RANGE) {
                 if (option->type == SANE_TYPE_FIXED) {
@@ -265,7 +259,9 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
                 }
             }
             
-            height = height/unitsPerInch;
+            // It expects an inch value here, regardless of what
+            // we specify above?!
+            height = height/25.4;
             
             deviceDict[@"ICAP_PHYSICALHEIGHT"] = @{
                 @"type": @"TWON_ONEVALUE",
@@ -322,6 +318,14 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
             else if (unit == 0 /* Inches */) {
                 // Great nothing to to here =)
                 option.value = dict[@"ICAP_XRESOLUTION"][@"value"];
+            }
+        }
+        else if ([option.name isEqualToString:kSanePreview] && dict[@"scan mode"]) {
+            if ([dict[@"scan mode"] isEqualToString:@"overview"]) {
+                option.value = @1;
+            }
+            else {
+                option.value = @0;
             }
         }
     }

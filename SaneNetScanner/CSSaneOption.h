@@ -6,7 +6,12 @@
 //  Copyright (c) 2012 Christian Speich. All rights reserved.
 //
 
+#import <Foundation/Foundation.h>
 #include "sane/sane.h"
+#import "CSSaneOptionConstraint.h"
+
+extern NSString* kSaneScanResolution;
+extern NSString* kSaneScanMode;
 
 @interface CSSaneOption : NSObject
 
@@ -18,5 +23,7 @@
 // Note: setting it will talk to the device
 // getting it may do also so
 @property (nonatomic, copy) id value;
+
+@property (nonatomic, strong, readonly) CSSaneOptionConstraint* constraint;
 
 @end

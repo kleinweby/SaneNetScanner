@@ -6,11 +6,19 @@
 //  Copyright (c) 2012 Christian Speich. All rights reserved.
 //
 
+#import "CSSaneOptionConstraint.h"
 #import "CSSaneOption.h"
+#include "sane/saneopts.h"
+
+NSString* kSaneScanResolution = (NSString*)CFSTR(SANE_NAME_SCAN_RESOLUTION);
+NSString* kSaneScanMode = (NSString*)CFSTR(SANE_NAME_SCAN_MODE);
 
 @interface CSSaneOption ()
 
 @property (nonatomic, copy) NSString* name;
+
+@property (nonatomic, strong) CSSaneOptionConstraint* constraint;
+
 @property (nonatomic) SANE_Handle saneHandle;
 @property (nonatomic) SANE_Int saneOptionNumber;
 
@@ -63,6 +71,8 @@
         self.saneOptionNumber = number;
         
         [self _fetchValue];
+        
+        self.constraint = [CSSaneOptionConstraint constraintWithDescriptor:self.descriptor];
     }
     return self;
 }
@@ -83,6 +93,8 @@
         SANE_Status status;
         
         values = malloc(self.descriptor->size);
+        
+        assert(values);
         
         status = sane_control_option(self.saneHandle,
                                      self.saneOptionNumber,
@@ -119,6 +131,8 @@
         
         values = malloc(self.descriptor->size);
         
+        assert(values);
+        
         status = sane_control_option(self.saneHandle,
                                      self.saneOptionNumber,
                                      SANE_ACTION_GET_VALUE,
@@ -140,7 +154,7 @@
             
             for (NSUInteger i = 0; i < numberOfValues; i++) {
                 [valueArray addObject:
-                 [NSNumber numberWithDouble:values[i]]];
+                 [NSNumber numberWithInt:values[i]]];
             }
             
             _value = valueArray;
@@ -169,6 +183,43 @@
         _value = [NSString stringWithUTF8String:value];
         free(value);
     }
+    else if (self.descriptor->type == SANE_TYPE_BOOL) {
+        SANE_Bool* values;
+        SANE_Status status;
+
+        values = malloc(self.descriptor->size);
+        
+        assert(values);
+        
+        status = sane_control_option(self.saneHandle,
+                                     self.saneOptionNumber,
+                                     SANE_ACTION_GET_VALUE,
+                                     values, 0);
+        
+        if (status != SANE_STATUS_GOOD) {
+            LogMessageCompat(@"Failed get %@: %s", self, sane_strstatus(status));
+            return;
+        }
+        
+        // Only one value
+        if (self.descriptor->size == sizeof(SANE_Bool)) {
+            _value = [NSNumber numberWithInt:values[0]];
+        }
+        // Multiple values
+        else {
+            NSUInteger numberOfValues = self.descriptor->size/sizeof(SANE_Int);
+            NSMutableArray* valueArray = [NSMutableArray arrayWithCapacity:numberOfValues];
+            
+            for (NSUInteger i = 0; i < numberOfValues; i++) {
+                [valueArray addObject:
+                 [NSNumber numberWithInt:values[i]]];
+            }
+            
+            _value = valueArray;
+        }
+        
+        free(values);
+    }
     else {
         LogMessageCompat(@"Unsupported type %@", self);
     }
@@ -176,12 +227,61 @@
 
 - (void) _setValue
 {
-    
+    if (self.descriptor->type == SANE_TYPE_STRING) {
+        SANE_String str;
+        SANE_Status status;
+        NSString* string = self.value;
+        
+        if (![string isKindOfClass:[NSString class]]) {
+            LogMessageCompat(@"%@ requires string but is %@", self, self.value);
+            return;
+        }
+        
+        str = malloc(self.descriptor->size);
+        strncpy(str, [string UTF8String], self.descriptor->size);
+        
+        LogMessageCompat(@"Set \"%@\" to \"%@\"", self.name, self.value);
+        status = sane_control_option(self.saneHandle,
+                                     self.saneOptionNumber,
+                                     SANE_ACTION_SET_VALUE,
+                                     str,
+                                     0);
+        
+        if (status != SANE_STATUS_GOOD) {
+            LogMessageCompat(@"Set failed %@: %s", self, sane_strstatus(status));
+            return;
+        }
+        free(str);
+    }
+    else if (self.descriptor->type == SANE_TYPE_FIXED) {
+        if (self.descriptor->size != sizeof(SANE_Fixed)) {
+            LogMessageCompat(@"Dont support multi-size fixed type set yet.");
+            return;
+        }
+        
+        SANE_Fixed value = SANE_FIX([self.value doubleValue]);
+        SANE_Status status;
+        
+        LogMessageCompat(@"Set \"%@\" to \"%@\"", self.name, self.value);
+        status = sane_control_option(self.saneHandle,
+                                     self.saneOptionNumber,
+                                     SANE_ACTION_SET_VALUE,
+                                     &value,
+                                     0);
+        
+        if (status != SANE_STATUS_GOOD) {
+            LogMessageCompat(@"Set failed %@: %s", self, sane_strstatus(status));
+            return;
+        }
+    }
+    else {
+        LogMessageCompat(@"Unsuported set type.");
+    }
 }
 
 - (NSString*)description
 {
-    return [NSString stringWithFormat:@"<SaneOption:%p> (name=%@, value=%@)", self, self.name, self.value];
+    return [NSString stringWithFormat:@"<SaneOption:%p> (name=%@, value=%@, constraint=%@)", self, self.name, self.value, self.constraint];
 }
 
 @end

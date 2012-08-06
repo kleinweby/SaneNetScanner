@@ -86,6 +86,8 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 
 @property (nonatomic) NSString* documentPath;
 
+@property (nonatomic) NSArray* saneOptions;
+
 @end
 
 @interface CSSaneNetScanner (Progress)
@@ -182,11 +184,8 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     @"availableFunctionalUnitTypes" : @[ @0 ]
     },
     @"selectedFunctionalUnitType": @0,
-//    @"CAP_AUTOFEED": @{ @"type": @"TWON_ONEVALUE", @"value": @1 },
-//    @"CAP_DUPLEX": @{ @"type": @"TWON_ONEVALUE", @"value": @2 },
-//    @"CAP_DUPLEXENABLED": @{ @"type": @"TWON_ONEVALUE", @"value": @0 },
-//    @"CAP_FEEDERENABLED": @{ @"type": @"TWON_ONEVALUE", @"value": @0 },
-                                       @"ICAP_SUPPORTEDSIZES": @{ @"current": @1, @"default": @1, @"type": @"TWON_ENUMERATION", @"value": @[ @1, @2, @3, @4, @5, @10, @0 ]},
+
+     @"ICAP_SUPPORTEDSIZES": @{ @"current": @1, @"default": @1, @"type": @"TWON_ENUMERATION", @"value": @[ @1, @2, @3, @4, @5, @10, @0 ]},
     
     
     @"ICAP_UNITS": @{ @"current": @1, @"default": @0, @"type": @"TWON_ENUMERATION", @"value": @[ @0, @1, @5 ] },
@@ -195,7 +194,19 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     
     SANE_Status status;
     
-    LogMessageCompat(@"Options %@", [CSSaneOption saneOptionsForHandle:self.saneHandle]);
+    self.saneOptions = [CSSaneOption saneOptionsForHandle:self.saneHandle];
+    
+    for (CSSaneOption* option in self.saneOptions) {
+        if ([option.name isEqualToString:kSaneScanResolution]) {
+            NSMutableDictionary* d = [NSMutableDictionary dictionary];
+            
+            [option.constraint addToDeviceDictionary:d];
+            d[@"current"] = option.value;
+            
+            deviceDict[@"ICAP_XRESOLUTION"] = d;
+            deviceDict[@"ICAP_YRESOLUTION"] = d;
+        }
+    }
     
     for (int i = 0;; i++) {
         const SANE_Option_Descriptor* option = sane_get_option_descriptor(self.saneHandle, i);
@@ -211,34 +222,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
         
         LogMessageCompat(@"Option %s", option->name);
         
-        if (strcmp(option->name, SANE_NAME_SCAN_RESOLUTION) == 0) {
-            LogMessageCompat(@"Found resolution.");
-            NSMutableDictionary* d = [NSMutableDictionary dictionary];
-            
-            AddConstraintToDict(option, d);
-            
-            d[@"SaneOptionNumber"] = [NSNumber numberWithInt:i];
-            
-            // Fetch current
-            SANE_Word value;
-            status = sane_control_option(self.saneHandle,
-                                         i,
-                                         SANE_ACTION_GET_VALUE,
-                                         &value, NULL);
-            
-            if (status != SANE_STATUS_GOOD) {
-                NSLog(@"Get failed");
-                assert(false);
-            }
-            
-            if (option->type == SANE_TYPE_FIXED) {
-                d[@"current"] = [NSNumber numberWithDouble:SANE_UNFIX(value)];
-            }
-            
-            deviceDict[@"ICAP_XRESOLUTION"] = d;
-            deviceDict[@"ICAP_YRESOLUTION"] = d;
-        }
-        else if (strcmp(option->name, SANE_NAME_SCAN_TL_X) == 0) {
+        if (strcmp(option->name, SANE_NAME_SCAN_TL_X) == 0) {
             if (option->constraint_type == SANE_CONSTRAINT_RANGE) {
                 double unitsPerInch;
                 double width;
@@ -341,44 +325,28 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 
     self.documentPath = [[dict[@"document folder"] stringByAppendingPathComponent:dict[@"document name"]] stringByAppendingPathExtension:dict[@"document extension"]];
     
-    if (dict[@"ColorSyncMode"]) {
-        if ([dict[@"ColorSyncMode"] isEqualToString:@"scanner.reflective.RGB.positive"])
-        {
-            SANE_String value = malloc(25);
-            SANE_Status status;
-            
-            strcpy(value, "Color");
-            
-            status = sane_control_option(self.saneHandle,
-                                         [self.deviceProperties[@"SaneScanMode"][@"SaneOptionNumber"] intValue],
-                                         SANE_ACTION_SET_VALUE,
-                                         value, NULL);
-            
-            if (status != SANE_STATUS_GOOD) {
-                NSLog(@"Set failed");
-                assert(false);
-            }
-            LogMessageCompat(@"Set scan mode to color");
-        }
-    }
+    int unit = [dict[@"ICAP_UNITS"][@"value"] intValue];
     
-    // Note: always force X=Y Resolution
-    if (dict[@"ICAP_XRESOLUTION"]) {
-        SANE_Int option = [dict[@"ICAP_XRESOLUTION"][@"SaneOptionNumber"] intValue];
-        SANE_Option_Descriptor* descriptor = sane_get_option_descriptor(self.saneHandle, option);
-        SANE_Status status;
-        
-        if (descriptor->type == SANE_TYPE_FIXED) {
-            SANE_Word value = SANE_FIX([dict[@"ICAP_XRESOLUTION"][@"value"] doubleValue]);
-            
-            status = sane_control_option(self.saneHandle,
-                                         option,
-                                         SANE_ACTION_SET_VALUE,
-                                         &value, NULL);
-            
-            if (status != SANE_STATUS_GOOD) {
-                NSLog(@"Set failed");
-                assert(false);
+    for (CSSaneOption* option in self.saneOptions) {
+        if ([option.name isEqualToString:kSaneScanMode] && dict[@"ColorSyncMode"]) {
+            NSString* syncMode = dict[@"ColorSyncMode"];
+            if ([syncMode isEqualToString:@"scanner.reflective.RGB.positive"]) {
+                option.value = @"Color";
+            }
+            else {
+                LogMessageCompat(@"Unkown colorsyncmode %@", syncMode);
+            }
+        }
+        // X and Y resolution are always equal
+        else if ([option.name isEqualToString:kSaneScanResolution] && (dict[@"ICAP_XRESOLUTION"] || dict[@"ICAP_XRESOLUTION"])) {
+            if (unit == 1 /* Centimeter */) {
+                // Convert dpcm to dpi
+                // 1 dpcm = 2,54 dpi
+                option.value = [NSNumber numberWithDouble:[dict[@"ICAP_XRESOLUTION"][@"value"] doubleValue] / 2.54];
+            }
+            else if (unit == 0 /* Inches */) {
+                // Great nothing to to here =)
+                option.value = dict[@"ICAP_XRESOLUTION"][@"value"];
             }
         }
     }

@@ -9,6 +9,7 @@
 #import "CSSaneNetScanner.h"
 
 #import "CSSaneOption.h"
+#import "CSSaneOptionRangeConstraint.h"
 
 #include "sane/sane.h"
 #include "sane/saneopts.h"
@@ -207,67 +208,52 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
             deviceDict[@"ICAP_XRESOLUTION"] = d;
             deviceDict[@"ICAP_YRESOLUTION"] = d;
         }
-    }
-    
-    for (int i = 0;; i++) {
-        const SANE_Option_Descriptor* option = sane_get_option_descriptor(self.saneHandle, i);
-        
-        if (option == NULL)
-            break;
-        
-        if (option->type == SANE_TYPE_GROUP)
-            LogMessageCompat(@"Group %s", option->title);
-        
-        if (option->name == NULL)
-            continue;
-        
-        LogMessageCompat(@"Option %s", option->name);
-        
-        if (strcmp(option->name, SANE_NAME_SCAN_TL_X) == 0) {
-            if (option->constraint_type == SANE_CONSTRAINT_RANGE) {
-                double unitsPerInch;
-                double width;
-                
-                if (option->unit == SANE_UNIT_MM)
-                    unitsPerInch = 25.4;
-                else
-                    unitsPerInch = 72.0;
-                
-                if (option->type == SANE_TYPE_FIXED) {
-                    width = SANE_UNFIX(option->constraint.range->max);
+        else if ([@[ kSaneTopLeftX, kSaneBottomRightX ] containsObject:option.name]) {
+            // Convert to inch (will be reported as mm)
+            CSSaneOptionRangeConstraint* constraint = (CSSaneOptionRangeConstraint*)option.constraint;
+            double width = ([constraint.maxValue doubleValue] - [constraint.minValue doubleValue])/25.4;
+            
+            // If already exists look if the new width is smaller and update if so
+            if (deviceDict[@"ICAP_PHYSICALWIDTH"]) {
+                if ([deviceDict[@"ICAP_PHYSICALWIDTH"][@"value"] doubleValue] > width) {
+                    deviceDict[@"ICAP_PHYSICALWIDTH"] = @{
+                        @"type": @"TWON_ONEVALUE",
+                        @"value": [NSNumber numberWithDouble:width]
+                    };
                 }
-                else if (option->type == SANE_TYPE_INT) {
-                    width = option->constraint.range->max;
-                }
-                
-                width = width/unitsPerInch;
-        
+            }
+            // Not present yes, so set
+            else {
                 deviceDict[@"ICAP_PHYSICALWIDTH"] = @{
                     @"type": @"TWON_ONEVALUE",
                     @"value": [NSNumber numberWithDouble:width]
                 };
             }
         }
-        else if (strcmp(option->name, SANE_NAME_SCAN_TL_Y) == 0) {
-            double height;
+        else if ([@[ kSaneTopLeftY, kSaneBottomRightY ] containsObject:option.name]) {
+            // Convert to inch (will be reported as mm)
+            CSSaneOptionRangeConstraint* constraint = (CSSaneOptionRangeConstraint*)option.constraint;
+            double height = ([constraint.maxValue doubleValue] - [constraint.minValue doubleValue])/25.4;
             
-            if (option->constraint_type == SANE_CONSTRAINT_RANGE) {
-                if (option->type == SANE_TYPE_FIXED) {
-                    height = SANE_UNFIX(option->constraint.range->max);
-                }
-                else if (option->type == SANE_TYPE_INT) {
-                    height = (int)option->constraint.range->max;
+            // If already exists look if the new width is smaller and update if so
+            if (deviceDict[@"ICAP_PHYSICALHEIGHT"]) {
+                if ([deviceDict[@"ICAP_PHYSICALHEIGHT"][@"value"] doubleValue] > height) {
+                    deviceDict[@"ICAP_PHYSICALHEIGHT"] = @{
+                    @"type": @"TWON_ONEVALUE",
+                    @"value": [NSNumber numberWithDouble:height]
+                    };
                 }
             }
-            
-            // It expects an inch value here, regardless of what
-            // we specify above?!
-            height = height/25.4;
-            
-            deviceDict[@"ICAP_PHYSICALHEIGHT"] = @{
+            // Not present yes, so set
+            else {
+                deviceDict[@"ICAP_PHYSICALHEIGHT"] = @{
                 @"type": @"TWON_ONEVALUE",
                 @"value": [NSNumber numberWithDouble:height]
-            };
+                };
+            }
+        }
+        else {
+            LogMessageCompat(@"Option %@ not exported", option);
         }
     }
     

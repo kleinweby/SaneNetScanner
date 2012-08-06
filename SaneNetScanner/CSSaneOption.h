@@ -13,6 +13,10 @@
 extern NSString* kSaneScanResolution;
 extern NSString* kSaneScanMode;
 extern NSString* kSanePreview;
+extern NSString* kSaneTopLeftX;
+extern NSString* kSaneTopLeftY;
+extern NSString* kSaneBottomRightX;
+extern NSString* kSaneBottomRightY;
 
 @interface CSSaneOption : NSObject
 

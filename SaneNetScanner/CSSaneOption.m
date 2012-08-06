@@ -13,7 +13,10 @@
 NSString* kSaneScanResolution = (NSString*)CFSTR(SANE_NAME_SCAN_RESOLUTION);
 NSString* kSaneScanMode = (NSString*)CFSTR(SANE_NAME_SCAN_MODE);
 NSString* kSanePreview = (NSString*)CFSTR(SANE_NAME_PREVIEW);
-
+NSString* kSaneTopLeftX = (NSString*)CFSTR(SANE_NAME_SCAN_TL_X);
+NSString* kSaneTopLeftY = (NSString*)CFSTR(SANE_NAME_SCAN_TL_Y);
+NSString* kSaneBottomRightX = (NSString*)CFSTR(SANE_NAME_SCAN_BR_X);
+NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
 
 @interface CSSaneOption ()
 

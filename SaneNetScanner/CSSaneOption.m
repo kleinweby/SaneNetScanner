@@ -274,6 +274,27 @@ NSString* kSaneScanMode = (NSString*)CFSTR(SANE_NAME_SCAN_MODE);
             return;
         }
     }
+    else if (self.descriptor->type == SANE_TYPE_INT) {
+        if (self.descriptor->size != sizeof(SANE_Int)) {
+            LogMessageCompat(@"Dont support multi-size int type set yet.");
+            return;
+        }
+        
+        SANE_Int value = [self.value intValue];
+        SANE_Status status;
+        
+        LogMessageCompat(@"Set \"%@\" to \"%@\"", self.name, self.value);
+        status = sane_control_option(self.saneHandle,
+                                     self.saneOptionNumber,
+                                     SANE_ACTION_SET_VALUE,
+                                     &value,
+                                     0);
+        
+        if (status != SANE_STATUS_GOOD) {
+            LogMessageCompat(@"Set failed %@: %s", self, sane_strstatus(status));
+            return;
+        }
+    }
     else {
         LogMessageCompat(@"Unsuported set type.");
     }

@@ -8,6 +8,8 @@
 
 #import "CSSaneNetScanner.h"
 
+#import "CSSaneOption.h"
+
 #include "sane/sane.h"
 #include "sane/saneopts.h"
 
@@ -53,6 +55,20 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
                 }
             }
         }
+        case SANE_CONSTRAINT_STRING_LIST:
+        {
+            NSMutableArray* list = [NSMutableArray array];
+            const char* const * ptr = descriptior->constraint.string_list;
+            while (*ptr != NULL) {
+                const char* const str = *ptr;
+                
+                [list addObject:[NSString stringWithUTF8String:str]];
+                
+                ptr++;
+            }
+            
+            dict[@"values"] = list;
+        }
         default:
             break;
     }
@@ -70,6 +86,8 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 
 @property (nonatomic) NSString* documentPath;
 
+@property (nonatomic) NSArray* saneOptions;
+
 @end
 
 @interface CSSaneNetScanner (Progress)
@@ -78,6 +96,8 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 - (void) doneWarmUpMessage;
 - (void) pageDoneMessage;
 - (void) scanDoneMessage;
+
+- (void) sendTransactionCanceledMessage;
 
 @end
 
@@ -164,18 +184,30 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     @"availableFunctionalUnitTypes" : @[ @0 ]
     },
     @"selectedFunctionalUnitType": @0,
-//    @"CAP_AUTOFEED": @{ @"type": @"TWON_ONEVALUE", @"value": @1 },
-//    @"CAP_DUPLEX": @{ @"type": @"TWON_ONEVALUE", @"value": @2 },
-//    @"CAP_DUPLEXENABLED": @{ @"type": @"TWON_ONEVALUE", @"value": @0 },
-//    @"CAP_FEEDERENABLED": @{ @"type": @"TWON_ONEVALUE", @"value": @0 },
-                                       @"ICAP_SUPPORTEDSIZES": @{ @"current": @1, @"default": @1, @"type": @"TWON_ENUMERATION", @"value": @[ @1, @2, @3, @4, @5, @10, @0 ]},
+
+     @"ICAP_SUPPORTEDSIZES": @{ @"current": @1, @"default": @1, @"type": @"TWON_ENUMERATION", @"value": @[ @1, @2, @3, @4, @5, @10, @0 ]},
     
     
-    @"ICAP_UNITS": @{ @"current": @1, @"default": @0, @"type": @"TWON_ENUMERATION", @"value": @[ @0, @1, @5 ] },
+    @"ICAP_UNITS": @{ @"current": @0, @"default": @0, @"type": @"TWON_ENUMERATION", @"value": @[ @0, @1, @5 ] },
     
     } mutableCopy];
     
     SANE_Status status;
+    
+    self.saneOptions = [CSSaneOption saneOptionsForHandle:self.saneHandle];
+    
+    for (CSSaneOption* option in self.saneOptions) {
+        if ([option.name isEqualToString:kSaneScanResolution]) {
+            NSMutableDictionary* d = [NSMutableDictionary dictionary];
+            
+            [option.constraint addToDeviceDictionary:d];
+            d[@"current"] = option.value;
+            d[@"default"] = option.value;
+            
+            deviceDict[@"ICAP_XRESOLUTION"] = d;
+            deviceDict[@"ICAP_YRESOLUTION"] = d;
+        }
+    }
     
     for (int i = 0;; i++) {
         const SANE_Option_Descriptor* option = sane_get_option_descriptor(self.saneHandle, i);
@@ -191,34 +223,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
         
         LogMessageCompat(@"Option %s", option->name);
         
-        if (strcmp(option->name, SANE_NAME_SCAN_RESOLUTION) == 0) {
-            LogMessageCompat(@"Found resolution.");
-            NSMutableDictionary* d = [NSMutableDictionary dictionary];
-            
-            AddConstraintToDict(option, d);
-            
-            d[@"SaneOptionNumber"] = [NSNumber numberWithInt:i];
-            
-            // Fetch current
-            SANE_Word value;
-            status = sane_control_option(self.saneHandle,
-                                         i,
-                                         SANE_ACTION_GET_VALUE,
-                                         &value, NULL);
-            
-            if (status != SANE_STATUS_GOOD) {
-                NSLog(@"Get failed");
-                assert(false);
-            }
-            
-            if (option->type == SANE_TYPE_FIXED) {
-                d[@"current"] = [NSNumber numberWithDouble:SANE_UNFIX(value)];
-            }
-            
-            deviceDict[@"ICAP_XRESOLUTION"] = d;
-            deviceDict[@"ICAP_YRESOLUTION"] = d;
-        }
-        else if (strcmp(option->name, SANE_NAME_SCAN_TL_X) == 0) {
+        if (strcmp(option->name, SANE_NAME_SCAN_TL_X) == 0) {
             if (option->constraint_type == SANE_CONSTRAINT_RANGE) {
                 double unitsPerInch;
                 double width;
@@ -244,13 +249,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
             }
         }
         else if (strcmp(option->name, SANE_NAME_SCAN_TL_Y) == 0) {
-            double unitsPerInch;
             double height;
-            
-            if (option->unit == SANE_UNIT_MM)
-                unitsPerInch = 25.4;
-            else
-                unitsPerInch = 72.0;
             
             if (option->constraint_type == SANE_CONSTRAINT_RANGE) {
                 if (option->type == SANE_TYPE_FIXED) {
@@ -261,7 +260,9 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
                 }
             }
             
-            height = height/unitsPerInch;
+            // It expects an inch value here, regardless of what
+            // we specify above?!
+            height = height/25.4;
             
             deviceDict[@"ICAP_PHYSICALHEIGHT"] = @{
                 @"type": @"TWON_ONEVALUE",
@@ -296,6 +297,40 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 
     self.documentPath = [[dict[@"document folder"] stringByAppendingPathComponent:dict[@"document name"]] stringByAppendingPathExtension:dict[@"document extension"]];
     
+    int unit = [dict[@"ICAP_UNITS"][@"value"] intValue];
+        
+    for (CSSaneOption* option in self.saneOptions) {
+        if ([option.name isEqualToString:kSaneScanMode] && dict[@"ColorSyncMode"]) {
+            NSString* syncMode = dict[@"ColorSyncMode"];
+            if ([syncMode isEqualToString:@"scanner.reflective.RGB.positive"]) {
+                option.value = @"Color";
+            }
+            else {
+                LogMessageCompat(@"Unkown colorsyncmode %@", syncMode);
+            }
+        }
+        // X and Y resolution are always equal
+        else if ([option.name isEqualToString:kSaneScanResolution] && (dict[@"ICAP_XRESOLUTION"] || dict[@"ICAP_XRESOLUTION"])) {
+            if (unit == 1 /* Centimeter */) {
+                // Convert dpcm to dpi
+                // 1 dpcm = 2,54 dpi
+                option.value = [NSNumber numberWithDouble:[dict[@"ICAP_XRESOLUTION"][@"value"] doubleValue] / 2.54];
+            }
+            else if (unit == 0 /* Inches */) {
+                // Great nothing to to here =)
+                option.value = dict[@"ICAP_XRESOLUTION"][@"value"];
+            }
+        }
+        else if ([option.name isEqualToString:kSanePreview] && dict[@"scan mode"]) {
+            if ([dict[@"scan mode"] isEqualToString:@"overview"]) {
+                option.value = @1;
+            }
+            else {
+                option.value = @0;
+            }
+        }
+    }
+    
     return noErr;
 }
 
@@ -315,8 +350,6 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     
     LogMessageCompat(@"Open file %@", self.documentPath);
     NSError* error = nil;
-    if (!self.documentPath)
-        return kICADeviceInternalErr;
     
     [self showWarmUpMessage];
     LogMessageCompat(@"sane_start");
@@ -339,40 +372,120 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     
     [self doneWarmUpMessage];
     
-    NSMutableData* data = [NSMutableData dataWithCapacity:parameters.bytes_per_line*parameters.lines];
+    LogMessageCompat(@"Prepare buffers");
+    int bufferSize;
+    int bufferdRows;
+    NSMutableData* buffer;
+    
+    // Choose buffer size
+    //
+    //  Use a buffer size around 50KiB.
+    //  the size will be aligned to row boundries
+    bufferdRows = MIN(50*1025 / parameters.bytes_per_line, parameters.lines);
+    bufferSize = bufferdRows * parameters.bytes_per_line;
+    
+    buffer = [NSMutableData dataWithLength:bufferSize];
+    
+    LogMessageCompat(@"Choose to buffer %u rows (%u in size)", bufferdRows, bufferSize);
     
     LogMessageCompat(@"Begin reading");
+    int row = 0;
+    
     do {
-        SANE_Byte buffer[512];
-        SANE_Int length;
+        // Fill the buffer
+        unsigned char* b = [buffer mutableBytes];
+        int filled = 0;
         
-        status = sane_read(self.saneHandle,
-                           buffer,
-                           512,
-                           &length);
-        
-        if (status == SANE_STATUS_GOOD) {
-            [data appendBytes:buffer length:length];
+        do {
+            SANE_Int readBytes;
+            status = sane_read(self.saneHandle,
+                               &b[filled],
+                               bufferSize - filled,
+                               &readBytes);
             
-            LogMessageCompat(@"Read %u", length);
-            [file writeData:data];
+            if (status == SANE_STATUS_EOF)
+                break;
+            else if (status != SANE_STATUS_GOOD) {
+                NSLog(@"Read error");
+                return kICADeviceInternalErr;
+            }
+            
+            filled += readBytes;
+        } while (filled < bufferSize);
+        // Shrink the buffer if not fully filled
+        // (may happen for the last block)
+        [buffer setLength:filled];
+
+        // Notify the image capture kit that we made progress
+        ICASendNotificationPB notePB = {
+            .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+            (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+            (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
+            } mutableCopy]
+        };
+        
+        // Send inline image data
+        if (true) {
+            ICDAddImageInfoToNotificationDictionary(notePB.notificationDictionary,
+                                                    parameters.pixels_per_line,
+                                                    parameters.lines,
+                                                    parameters.bytes_per_line,
+                                                    row,
+                                                    bufferdRows,
+                                                    (UInt32)[buffer length],
+                                                    (void*)[buffer bytes]);
         }
+        
+        // Send the progress and check if the user
+        // canceled the scan
+        if (ICDSendNotificationAndWaitForReply(&notePB) == noErr)
+        {
+            if (notePB.replyCode == userCanceledErr) {
+                LogMessageCompat(@"User canceled. Clean up...");
+                sane_cancel(self.saneHandle);
+                
+                [self sendTransactionCanceledMessage];
+                return noErr;
+            }
+        }
+        LogMessageCompat(@"Read line %i", row);
+        row+=bufferdRows;
     } while (status == SANE_STATUS_GOOD);
 
-    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
-    CGImageRef image = CGImageCreate(parameters.pixels_per_line,
-                                     parameters.lines,
-                                     8,
-                                     8,
-                                     parameters.bytes_per_line,
-                                     CGColorSpaceCreateDeviceGray(),
-                                     kCGImageAlphaNone,
-                                     provider,
-                                     NULL,
-                                     NO,
-                                     kCGRenderingIntentDefault);
+//    ICASendNotificationPB notePB = {
+//        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+//        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+//        (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
+//        } mutableCopy]
+//    };
+//    
+//    ICDAddImageInfoToNotificationDictionary(notePB.notificationDictionary,
+//                                            parameters.pixels_per_line,
+//                                            parameters.lines,
+//                                            parameters.bytes_per_line,
+//                                            0,
+//                                            parameters.lines,
+//                                            (UInt32)[data length],
+//                                            (void*)[data bytes]);
+//    
+//	ICDSendNotification( &notePB );
     
-    [self writeImageAsTiff:image toFile:self.documentPath];
+//    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
+//    CGImageRef image = CGImageCreate(parameters.pixels_per_line,
+//                                     parameters.lines,
+//                                     8,
+//                                     8,
+//                                     parameters.bytes_per_line,
+//                                     CGColorSpaceCreateDeviceGray(),
+//                                     kCGImageAlphaNone,
+//                                     provider,
+//                                     NULL,
+//                                     NO,
+//                                     kCGRenderingIntentDefault);
+//    
+//    if (self.documentPath) {
+//        [self writeImageAsTiff:image toFile:self.documentPath];
+//    }
     
     sane_cancel(self.saneHandle);
     
@@ -436,9 +549,12 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
         .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
         (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerPageDone,
-        (id)kICANotificationScannerDocumentNameKey: self.documentPath
         } mutableCopy]
     };
+    
+    if (self.documentPath)
+        ((__bridge NSMutableDictionary*)notePB.notificationDictionary)[(id)kICANotificationScannerDocumentNameKey] =self.documentPath;
+
 
 	ICDSendNotification( &notePB );
 }
@@ -449,6 +565,18 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
         .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
         (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerScanDone
+        } mutableCopy]
+    };
+    
+	ICDSendNotification( &notePB );
+}
+
+- (void) sendTransactionCanceledMessage
+{
+    ICASendNotificationPB notePB = {
+        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationTypeKey: (id)kICANotificationTypeTransactionCanceled
         } mutableCopy]
     };
     

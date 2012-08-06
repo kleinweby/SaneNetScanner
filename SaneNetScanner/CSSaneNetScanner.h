@@ -47,6 +47,8 @@
 
 @property (nonatomic, strong, readonly) NSString* prettyName;
 
+@property (nonatomic, assign) ScannerObjectInfo* scannerObjectInfo;
+
 // ICD Callbacks
 - (ICAError) openSession:(ICD_ScannerOpenSessionPB*)params;
 - (ICAError) closeSession:(ICD_ScannerCloseSessionPB*)params;

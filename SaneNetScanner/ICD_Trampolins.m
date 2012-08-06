@@ -64,6 +64,7 @@ ICAError ICD_ScannerOpenTCPIPDevice(CFDictionaryRef params,
     
     // Populate the scanner structure
     newDeviceObjectInfo->privateData = (Ptr)CFBridgingRetain(scanner);
+    scanner.scannerObjectInfo = newDeviceObjectInfo;
     newDeviceObjectInfo->flags = 0;
     // All scanner clients are based on ImageCaptureCore framework, which dynamically determines
     // size of thumbnails. So, we do not need to know the exact size of the thumbnail. Set this

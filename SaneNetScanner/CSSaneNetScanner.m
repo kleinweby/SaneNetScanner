@@ -68,6 +68,17 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 
 @property (nonatomic) SANE_Handle saneHandle;
 
+@property (nonatomic) NSString* documentPath;
+
+@end
+
+@interface CSSaneNetScanner (Progress)
+
+- (void) showWarmUpMessage;
+- (void) doneWarmUpMessage;
+- (void) pageDoneMessage;
+- (void) scanDoneMessage;
+
 @end
 
 @implementation CSSaneNetScanner
@@ -132,6 +143,10 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     // provided in the device information before, which is limited to 32 characters.
     [dict setObject:self.prettyName
              forKey:(NSString*)kICAUserAssignedDeviceNameKey];
+    
+    // Add key indicating that the module supports using the ICA Raw File
+    // as a backing store for image io
+//    [dict setObject:[NSNumber numberWithInt:1] forKey:@"supportsICARawFileFormat"];
     
     return noErr;
 }
@@ -277,8 +292,11 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 - (ICAError) setParameters:(ICD_ScannerSetParametersPB*)params
 {
     LogMessageCompat(@"Set params: %@", params->theDict);
+    NSDictionary* dict = ((__bridge NSDictionary *)(params->theDict))[@"userScanArea"];
 
-    return paramErr;
+    self.documentPath = [[dict[@"document folder"] stringByAppendingPathComponent:dict[@"document name"]] stringByAppendingPathExtension:dict[@"document extension"]];
+    
+    return noErr;
 }
 
 - (ICAError) status:(ICD_ScannerStatusPB*)params
@@ -291,8 +309,150 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 - (ICAError) start:(ICD_ScannerStartPB*)params
 {
     LogMessageCompat(@"Start");
+    SANE_Status status;
+    SANE_Parameters parameters;
+    NSFileHandle* file;
     
-    return paramErr;
+    LogMessageCompat(@"Open file %@", self.documentPath);
+    NSError* error = nil;
+    if (!self.documentPath)
+        return kICADeviceInternalErr;
+    
+    [self showWarmUpMessage];
+    LogMessageCompat(@"sane_start");
+    status = sane_start(self.saneHandle);
+    
+    if (status != SANE_STATUS_GOOD) {
+        LogMessageCompat(@"sane_start failed: %s", sane_strstatus(status));
+        return kICADeviceInternalErr;
+    }
+    
+    LogMessageCompat(@"sane_get_parameters");
+    status = sane_get_parameters(self.saneHandle, &parameters);
+    
+    if (status != SANE_STATUS_GOOD) {
+        LogMessageCompat(@"sane_get_parameters failed: %s", sane_strstatus(status));
+        sane_cancel(self.saneHandle);
+        return kICADeviceInternalErr;
+    }
+    LogMessageCompat(@"sane_get_parameters: last_frame=%u, bytes_per_line=%u, pixels_per_line=%u, lines=%u, depth=%u", parameters.last_frame, parameters.bytes_per_line, parameters.pixels_per_line, parameters.lines, parameters.depth);
+    
+    [self doneWarmUpMessage];
+    
+    NSMutableData* data = [NSMutableData dataWithCapacity:parameters.bytes_per_line*parameters.lines];
+    
+    LogMessageCompat(@"Begin reading");
+    do {
+        SANE_Byte buffer[512];
+        SANE_Int length;
+        
+        status = sane_read(self.saneHandle,
+                           buffer,
+                           512,
+                           &length);
+        
+        if (status == SANE_STATUS_GOOD) {
+            [data appendBytes:buffer length:length];
+            
+            LogMessageCompat(@"Read %u", length);
+            [file writeData:data];
+        }
+    } while (status == SANE_STATUS_GOOD);
+
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
+    CGImageRef image = CGImageCreate(parameters.pixels_per_line,
+                                     parameters.lines,
+                                     8,
+                                     8,
+                                     parameters.bytes_per_line,
+                                     CGColorSpaceCreateDeviceGray(),
+                                     kCGImageAlphaNone,
+                                     provider,
+                                     NULL,
+                                     NO,
+                                     kCGRenderingIntentDefault);
+    
+    [self writeImageAsTiff:image toFile:self.documentPath];
+    
+    sane_cancel(self.saneHandle);
+    
+    LogMessageCompat(@"Done...");
+    [self pageDoneMessage];
+    [self scanDoneMessage];
+    
+    return noErr;
+}
+
+- (void) writeImageAsTiff:(CGImageRef)image toFile:(NSString*)file
+{
+    int compression = NSTIFFCompressionLZW;  // non-lossy LZW compression
+	CFMutableDictionaryRef mSaveMetaAndOpts = CFDictionaryCreateMutable(nil, 0,
+																		&kCFTypeDictionaryKeyCallBacks,  &kCFTypeDictionaryValueCallBacks);
+	CFMutableDictionaryRef tiffProfsMut = CFDictionaryCreateMutable(nil, 0,
+																	&kCFTypeDictionaryKeyCallBacks,  &kCFTypeDictionaryValueCallBacks);
+	CFDictionarySetValue(tiffProfsMut, kCGImagePropertyTIFFCompression, CFNumberCreate(NULL, kCFNumberIntType, &compression));
+	CFDictionarySetValue(mSaveMetaAndOpts, kCGImagePropertyTIFFDictionary, tiffProfsMut);
+    
+	NSURL *outURL = [[NSURL alloc] initFileURLWithPath:file];
+	CGImageDestinationRef dr = CGImageDestinationCreateWithURL((__bridge CFURLRef)outURL, (__bridge CFStringRef)@"public.tiff" , 1, NULL);
+	CGImageDestinationAddImage(dr, image, mSaveMetaAndOpts);
+	CGImageDestinationFinalize(dr);
+}
+
+@end
+
+@implementation CSSaneNetScanner (Progress)
+
+- (void) showWarmUpMessage
+{
+    // TODO: this probbably leaks the dictinonary
+    ICASendNotificationPB notePB = {
+        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+            (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+            (id)kICANotificationTypeKey: (id)kICANotificationTypeDeviceStatusInfo,
+            (id)kICANotificationSubTypeKey: (id)kICANotificationSubTypeWarmUpStarted
+        } mutableCopy]
+    };
+    
+	ICDSendNotification( &notePB );
+}
+
+- (void) doneWarmUpMessage
+{
+    ICASendNotificationPB notePB = {
+        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationTypeKey: (id)kICANotificationTypeDeviceStatusInfo,
+        (id)kICANotificationSubTypeKey: (id)kICANotificationSubTypeWarmUpDone
+        } mutableCopy]
+    };
+    
+	ICDSendNotification( &notePB );
+}
+
+- (void) pageDoneMessage
+{
+    ICASendNotificationPB notePB = {
+        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerPageDone,
+        (id)kICANotificationScannerDocumentNameKey: self.documentPath
+        } mutableCopy]
+    };
+
+	ICDSendNotification( &notePB );
+}
+
+- (void) scanDoneMessage
+{
+    ICASendNotificationPB notePB = {
+        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerScanDone
+        } mutableCopy]
+    };
+    
+	ICDSendNotification( &notePB );
 }
 
 @end

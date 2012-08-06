@@ -18,6 +18,7 @@
 		AA45B45815CEF529004A8357 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B45615CEF517004A8357 /* Carbon.framework */; };
 		AA45B46815CF0451004A8357 /* LoggerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AA45B46615CF0451004A8357 /* LoggerClient.m */; };
 		AA45B46B15CF04F1004A8357 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B46A15CF04F1004A8357 /* SystemConfiguration.framework */; };
+		AAC97EC915D0137600B9E327 /* CSSaneOption.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC97EC815D0137600B9E327 /* CSSaneOption.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,8 @@
 		AA45B46715CF0451004A8357 /* LoggerCommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LoggerCommon.h; sourceTree = "<group>"; };
 		AA45B46915CF0466004A8357 /* Log.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Log.h; sourceTree = "<group>"; };
 		AA45B46A15CF04F1004A8357 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		AAC97EC715D0137600B9E327 /* CSSaneOption.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CSSaneOption.h; sourceTree = "<group>"; };
+		AAC97EC815D0137600B9E327 /* CSSaneOption.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CSSaneOption.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +109,7 @@
 		AA45B42C15CED4D9004A8357 /* SaneNetScanner */ = {
 			isa = PBXGroup;
 			children = (
+				AAC97EC515D0136400B9E327 /* Sane Wrapper */,
 				AA45B46415CF0446004A8357 /* Logging */,
 				AA45B42D15CED4D9004A8357 /* Supporting Files */,
 				AA45B44B15CEEB7B004A8357 /* CSSaneNetScanner.h */,
@@ -155,6 +159,15 @@
 				AA45B46915CF0466004A8357 /* Log.h */,
 			);
 			name = Logging;
+			sourceTree = "<group>";
+		};
+		AAC97EC515D0136400B9E327 /* Sane Wrapper */ = {
+			isa = PBXGroup;
+			children = (
+				AAC97EC715D0137600B9E327 /* CSSaneOption.h */,
+				AAC97EC815D0137600B9E327 /* CSSaneOption.m */,
+			);
+			name = "Sane Wrapper";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -225,6 +238,7 @@
 				AA45B44D15CEEB7B004A8357 /* CSSaneNetScanner.m in Sources */,
 				AA45B45015CEED1E004A8357 /* ICD_Trampolins.m in Sources */,
 				AA45B46815CF0451004A8357 /* LoggerClient.m in Sources */,
+				AAC97EC915D0137600B9E327 /* CSSaneOption.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,6 +366,7 @@
 				AA45B44215CED4D9004A8357 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

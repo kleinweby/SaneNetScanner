@@ -10,12 +10,19 @@
 #import "ICD_Trampolins.h"
 #import "sane/sane.h"
 
+void AuthCallBack(SANE_String_Const resource,
+                  SANE_Char *username,
+                  SANE_Char *password) {
+    username = "";
+    password = "";
+}
+
 int main(int argc, char *argv[])
 {
     int status = 0;
     SANE_Status saneStatus;
     
-    saneStatus = sane_init(NULL, NULL);
+    saneStatus = sane_init(NULL, &AuthCallBack);
     
     if (saneStatus != SANE_STATUS_GOOD) {
         NSLog(@"Sane init failed");

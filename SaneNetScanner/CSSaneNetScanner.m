@@ -202,6 +202,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
             
             [option.constraint addToDeviceDictionary:d];
             d[@"current"] = option.value;
+            d[@"default"] = option.value;
             
             deviceDict[@"ICAP_XRESOLUTION"] = d;
             deviceDict[@"ICAP_YRESOLUTION"] = d;

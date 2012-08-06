@@ -272,31 +272,6 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
                 @"value": [NSNumber numberWithDouble:height]
             };
         }
-        else if (strcmp(option->name, SANE_NAME_SCAN_MODE) == 0) {
-            
-            NSMutableDictionary* d = [NSMutableDictionary dictionary];
-            
-            d[@"SaneOptionNumber"] = [NSNumber numberWithInt:i];
-            
-            AddConstraintToDict(option, d);
-            
-            // Fetch current
-            SANE_String_Const value = malloc(option->size);
-            status = sane_control_option(self.saneHandle,
-                                         i,
-                                         SANE_ACTION_GET_VALUE,
-                                         value, NULL);
-            
-            if (status != SANE_STATUS_GOOD) {
-                NSLog(@"Get failed");
-                assert(false);
-            }
-            
-            d[@"current"] = [NSString stringWithUTF8String:value];
-            
-            LogMessageCompat(@"Found scan modes %@", d);
-            deviceDict[@"SaneScanMode"] = d;
-        }
     }
     
     // The bitdepth was not an option from the device
@@ -326,7 +301,7 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     self.documentPath = [[dict[@"document folder"] stringByAppendingPathComponent:dict[@"document name"]] stringByAppendingPathExtension:dict[@"document extension"]];
     
     int unit = [dict[@"ICAP_UNITS"][@"value"] intValue];
-    
+        
     for (CSSaneOption* option in self.saneOptions) {
         if ([option.name isEqualToString:kSaneScanMode] && dict[@"ColorSyncMode"]) {
             NSString* syncMode = dict[@"ColorSyncMode"];

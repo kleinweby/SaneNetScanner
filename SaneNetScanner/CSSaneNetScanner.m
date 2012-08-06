@@ -404,11 +404,10 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 
         // Notify the image capture kit that we made progress
         ICASendNotificationPB notePB = {};
-        
         NSMutableDictionary* d = [@{
-         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
-         (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
-                                         } mutableCopy];
+            (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+            (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
+        } mutableCopy];
         
         notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)d;
 
@@ -508,38 +507,38 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 - (void) showWarmUpMessage
 {
     // TODO: this probbably leaks the dictinonary
-    ICASendNotificationPB notePB = {
-        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+    ICASendNotificationPB notePB = {};
+    NSMutableDictionary* dict = [@{
             (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
             (id)kICANotificationTypeKey: (id)kICANotificationTypeDeviceStatusInfo,
             (id)kICANotificationSubTypeKey: (id)kICANotificationSubTypeWarmUpStarted
-        } mutableCopy]
-    };
+    } mutableCopy];
+    notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
 	ICDSendNotification( &notePB );
 }
 
 - (void) doneWarmUpMessage
 {
-    ICASendNotificationPB notePB = {
-        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+    ICASendNotificationPB notePB = {};
+    NSMutableDictionary* dict = [@{
         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
         (id)kICANotificationTypeKey: (id)kICANotificationTypeDeviceStatusInfo,
         (id)kICANotificationSubTypeKey: (id)kICANotificationSubTypeWarmUpDone
-        } mutableCopy]
-    };
+    } mutableCopy];
+    notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
 	ICDSendNotification( &notePB );
 }
 
 - (void) pageDoneMessage
 {
-    ICASendNotificationPB notePB = {
-        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+    ICASendNotificationPB notePB = {};
+    NSMutableDictionary* dict = [@{
         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
         (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerPageDone,
-        } mutableCopy]
-    };
+    } mutableCopy];
+    notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
     if (self.documentPath)
         ((__bridge NSMutableDictionary*)notePB.notificationDictionary)[(id)kICANotificationScannerDocumentNameKey] =self.documentPath;
@@ -550,24 +549,24 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
 
 - (void) scanDoneMessage
 {
-    ICASendNotificationPB notePB = {
-        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+    ICASendNotificationPB notePB = {};
+    NSMutableDictionary* dict = [@{
         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
         (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerScanDone
-        } mutableCopy]
-    };
+    } mutableCopy];
+    notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
 	ICDSendNotification( &notePB );
 }
 
 - (void) sendTransactionCanceledMessage
 {
-    ICASendNotificationPB notePB = {
-        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
+    ICASendNotificationPB notePB = {};
+    NSMutableDictionary* dict = [@{
         (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
         (id)kICANotificationTypeKey: (id)kICANotificationTypeTransactionCanceled
-        } mutableCopy]
-    };
+    } mutableCopy];
+    notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
 	ICDSendNotification( &notePB );
 }

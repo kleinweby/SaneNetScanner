@@ -281,6 +281,49 @@ typedef enum {
                 option.value = @0;
             }
         }
+        else if ([option.name isEqualToString:kSaneTopLeftX] && dict[@"offsetX"]) {
+            if (unit == 1 /* Centimeter */) {
+                // Convert cm to mm
+                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 10];
+            }
+            else if (unit == 0 /* Inches */) {
+                // Convert inches to mm
+                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 25.4];
+            }
+        }
+        else if ([option.name isEqualToString:kSaneTopLeftY] && dict[@"offsetY"]) {
+            if (unit == 1 /* Centimeter */) {
+                // Convert cm to mm
+                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 10];
+            }
+            else if (unit == 0 /* Inches */) {
+                // Convert inches to mm
+                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 25.4];
+            }
+        }
+        else if ([option.name isEqualToString:kSaneBottomRightX] && dict[@"width"]) {
+            double value = [dict[@"offsetX"] doubleValue] + [dict[@"width"] doubleValue];
+            if (unit == 1 /* Centimeter */) {
+                // Convert cm to mm
+                option.value = [NSNumber numberWithDouble:value * 10];
+            }
+            else if (unit == 0 /* Inches */) {
+                // Convert inches to mm
+                option.value = [NSNumber numberWithDouble:value * 25.4];
+            }
+        }
+        else if ([option.name isEqualToString:kSaneBottomRightY] && dict[@"height"]) {
+            double value = [dict[@"offsetY"] doubleValue] + [dict[@"height"] doubleValue];
+            if (unit == 1 /* Centimeter */) {
+                // Convert cm to mm
+                option.value = [NSNumber numberWithDouble:value * 10];
+            }
+            else if (unit == 0 /* Inches */) {
+                // Convert inches to mm
+                option.value = [NSNumber numberWithDouble:value * 25.4];
+            }
+        }
+    }
         
     if ([dict[@"progressNotificationWithData"] boolValue]) {
         self.progressNotifications = ProgressNotificationsWithData;

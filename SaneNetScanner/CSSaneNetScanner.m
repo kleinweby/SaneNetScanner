@@ -8,6 +8,8 @@
 
 #import "CSSaneNetScanner.h"
 
+#import "CSSequentialDataProvider.h"
+
 #import "CSSaneOption.h"
 #import "CSSaneOptionRangeConstraint.h"
 
@@ -29,14 +31,18 @@ typedef enum {
 
 @property (nonatomic) SANE_Handle saneHandle;
 
-@property (nonatomic) NSString* documentPath;
-
 @property (nonatomic) NSArray* saneOptions;
 
 @property (nonatomic) ProgressNotifications progressNotifications;
 @property (nonatomic) BOOL produceFinalScan;
 
 @property (nonatomic) NSString* colorSyncMode;
+
+@property (nonatomic, assign) CGColorSpaceRef colorSpace;
+
+@property (nonatomic) NSURL* rawFileURL;
+@property (nonatomic) NSURL* documentURL;
+@property (nonatomic) NSString* documentType;
 
 @end
 
@@ -53,8 +59,14 @@ typedef enum {
 
 @interface CSSaneNetScanner (ICARawFile)
 
+- (void) createColorSpaceWithSaneParameters:(SANE_Parameters*)parameters;
 - (void) writeHeaderToFile:(NSFileHandle*)handle
         withSaneParameters:(SANE_Parameters*)parameters;
+
+- (void) resaveRawFileAt:(NSURL*)url
+                  asType:(NSString*)type
+                   toURL:(NSURL*)url
+          saneParameters:(SANE_Parameters*)parameters;
 
 @end
 
@@ -152,8 +164,7 @@ typedef enum {
     },
     @"selectedFunctionalUnitType": @0,
 
-     @"ICAP_SUPPORTEDSIZES": @{ @"current": @1, @"default": @1, @"type": @"TWON_ENUMERATION", @"value": @[ @1, @2, @3, @4, @5, @10, @0 ]},
-    
+    @"ICAP_SUPPORTEDSIZES": @{ @"current": @1, @"default": @1, @"type": @"TWON_ENUMERATION", @"value": @[ @1, @2, @3, @4, @5, @10, @0 ]},
     
     @"ICAP_UNITS": @{ @"current": @0, @"default": @0, @"type": @"TWON_ENUMERATION", @"value": @[ @0, @1, @5 ] },
     
@@ -247,8 +258,23 @@ typedef enum {
     LogMessageCompat(@"Set params: %@", params->theDict);
     NSDictionary* dict = ((__bridge NSDictionary *)(params->theDict))[@"userScanArea"];
 
-    self.documentPath = [[dict[@"document folder"] stringByAppendingPathComponent:dict[@"document name"]] stringByAppendingPathExtension:dict[@"document extension"]];
     
+    {
+        NSString* documentPath = dict[@"document folder"];
+        documentPath = [documentPath stringByAppendingPathComponent:dict[@"document name"]];
+        documentPath = [documentPath stringByAppendingPathExtension:dict[@"document extension"]];
+        
+        if (documentPath) {
+            self.documentURL = [NSURL fileURLWithPath:documentPath];
+            self.documentType = dict[@"document format"];
+        }
+        
+        // RAW is not requested, so we need a temporary raw file
+        if (![self.documentType isEqualToString:@"com.apple.ica.raw"] && !self.rawFileURL) {
+            self.rawFileURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingFormat:@"scan-raw-%@.ica", [[NSUUID UUID] UUIDString]]];
+        }
+    }
+        
     int unit = [dict[@"ICAP_UNITS"][@"value"] intValue];
         
     for (CSSaneOption* option in self.saneOptions) {
@@ -357,9 +383,7 @@ typedef enum {
     LogMessageCompat(@"Start");
     SANE_Status status;
     SANE_Parameters parameters;
-    
-    LogMessageCompat(@"Open file %@", self.documentPath);
-    
+        
     [self showWarmUpMessage];
     LogMessageCompat(@"sane_start");
     status = sane_start(self.saneHandle);
@@ -385,10 +409,20 @@ typedef enum {
     LogMessageCompat(@"Prepare raw file");
     NSFileHandle* rawFileHandle;
     
-    [[NSFileManager defaultManager] createFileAtPath:self.documentPath
-                                            contents:nil
-                                          attributes:nil];
-    rawFileHandle = [NSFileHandle fileHandleForWritingAtPath:self.documentPath];
+    if (![self.documentType isEqualToString:@"com.apple.ica.raw"]) {
+        [[NSFileManager defaultManager] createFileAtPath:[self.rawFileURL path]
+                                                contents:nil
+                                              attributes:nil];
+        rawFileHandle = [NSFileHandle fileHandleForWritingAtPath:[self.rawFileURL path]];
+    }
+    else {
+        [[NSFileManager defaultManager] createFileAtPath:[self.documentURL path]
+                                                contents:nil
+                                              attributes:nil];
+        rawFileHandle = [NSFileHandle fileHandleForWritingAtPath:[self.documentURL path]];
+    }
+    
+    [self createColorSpaceWithSaneParameters:&parameters];
     
     // Write header
     [self writeHeaderToFile:rawFileHandle
@@ -496,25 +530,13 @@ typedef enum {
 
     // We now need to read the raw file and produce a formatted version
     if (self.produceFinalScan) {
-        
+        if (![self.documentType isEqualToString:@"com.apple.ica.raw"]) {
+            [self resaveRawFileAt:self.rawFileURL
+                           asType:self.documentType
+                            toURL:self.documentURL
+                   saneParameters:&parameters];
+        }
     }
-    
-//    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
-//    CGImageRef image = CGImageCreate(parameters.pixels_per_line,
-//                                     parameters.lines,
-//                                     8,
-//                                     8,
-//                                     parameters.bytes_per_line,
-//                                     CGColorSpaceCreateDeviceGray(),
-//                                     kCGImageAlphaNone,
-//                                     provider,
-//                                     NULL,
-//                                     NO,
-//                                     kCGRenderingIntentDefault);
-//    
-//    if (self.documentPath) {
-//        [self writeImageAsTiff:image toFile:self.documentPath];
-//    }
     
     sane_cancel(self.saneHandle);
     
@@ -581,8 +603,8 @@ typedef enum {
     } mutableCopy];
     notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
-    if (self.documentPath)
-        ((__bridge NSMutableDictionary*)notePB.notificationDictionary)[(id)kICANotificationScannerDocumentNameKey] =self.documentPath;
+    if (self.documentURL)
+        ((__bridge NSMutableDictionary*)notePB.notificationDictionary)[(id)kICANotificationScannerDocumentNameKey] = [self.documentURL path];
 
 
 	ICDSendNotification( &notePB );
@@ -616,11 +638,22 @@ typedef enum {
 
 @implementation CSSaneNetScanner (ICARawFile)
 
+- (void) createColorSpaceWithSaneParameters:(SANE_Parameters*)parameters
+{
+    NSString* profilePath = [NSTemporaryDirectory() stringByAppendingFormat:@"vs-%d",getpid()];
+
+    self.colorSpace = ICDCreateColorSpace(3 * parameters->depth,
+                                          3,
+                                          self.scannerObjectInfo->icaObject,
+                                          (__bridge CFStringRef)(self.colorSyncMode),
+                                          NULL,
+                                          (char*)[profilePath fileSystemRepresentation]);
+}
+
 - (void) writeHeaderToFile:(NSFileHandle*)handle
         withSaneParameters:(SANE_Parameters*)parameters
 {
     ICARawFileHeader h;
-    NSString* profilePath = [NSTemporaryDirectory() stringByAppendingFormat:@"vs-%d",getpid()];
     
     h.imageDataOffset      = sizeof(ICARawFileHeader);
     h.version              = 1;
@@ -630,12 +663,7 @@ typedef enum {
     h.bitsPerComponent     = parameters->depth;
     h.bitsPerPixel         = 3 * parameters->depth;
     h.numberOfComponents   = 3;
-    h.cgColorSpaceModel    = CGColorSpaceGetModel(ICDCreateColorSpace(3 * parameters->depth,
-                                                                      3,
-                                                                      self.scannerObjectInfo->icaObject,
-                                                                      (__bridge CFStringRef)(self.colorSyncMode),
-                                                                      NULL,
-                                                                      (char*)[profilePath fileSystemRepresentation]));
+    h.cgColorSpaceModel    = CGColorSpaceGetModel(self.colorSpace);
     h.bitmapInfo           = kCGImageAlphaNone;
     h.dpi                  = 75;
     h.orientation          = 1;
@@ -644,6 +672,32 @@ typedef enum {
     [handle writeData:[NSData dataWithBytesNoCopy:&h
                                            length:sizeof(ICARawFileHeader)
                                      freeWhenDone:NO]];
+}
+
+- (void) resaveRawFileAt:(NSURL*)url
+                  asType:(NSString*)type
+                   toURL:(NSURL*)destUrl
+          saneParameters:(SANE_Parameters*)parameters
+{
+    CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)destUrl, (__bridge CFStringRef)type, 1, nil);
+    CGDataProviderRef provider = [CSSequentialDataProvider createDataProviderWithFileAtURL:url
+                                                                             andHardOffset:sizeof(ICARawFileHeader)];
+    
+    CGImageRef image = CGImageCreate(parameters->pixels_per_line,
+                                     parameters->lines,
+                                     parameters->depth,
+                                     3 * parameters->depth,
+                                     parameters->bytes_per_line,
+                                     self.colorSpace,
+                                     kCGImageAlphaNone,
+                                     provider,
+                                     NULL,
+                                     NO, kCGRenderingIntentDefault);
+    
+    CGImageDestinationAddImage(dest, image, nil);
+    
+    
+    CGImageDestinationFinalize(dest);
 }
 
 @end

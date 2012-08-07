@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA02A6E015D159BE008B329A /* CSSequentialDataProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = AA02A6DF15D159BE008B329A /* CSSequentialDataProvider.m */; };
 		AA45B42715CED4D9004A8357 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B42615CED4D9004A8357 /* Cocoa.framework */; };
 		AA45B43115CED4D9004A8357 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA45B42F15CED4D9004A8357 /* InfoPlist.strings */; };
 		AA45B43315CED4D9004A8357 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA45B43215CED4D9004A8357 /* main.m */; };
@@ -25,6 +26,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		AA02A6DE15D159BE008B329A /* CSSequentialDataProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CSSequentialDataProvider.h; sourceTree = "<group>"; };
+		AA02A6DF15D159BE008B329A /* CSSequentialDataProvider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CSSequentialDataProvider.m; sourceTree = "<group>"; };
 		AA45B42215CED4D9004A8357 /* SaneNetScanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SaneNetScanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA45B42615CED4D9004A8357 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		AA45B42915CED4D9004A8357 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -123,6 +126,8 @@
 				AA45B42D15CED4D9004A8357 /* Supporting Files */,
 				AA45B44B15CEEB7B004A8357 /* CSSaneNetScanner.h */,
 				AA45B44C15CEEB7B004A8357 /* CSSaneNetScanner.m */,
+				AA02A6DE15D159BE008B329A /* CSSequentialDataProvider.h */,
+				AA02A6DF15D159BE008B329A /* CSSequentialDataProvider.m */,
 			);
 			path = SaneNetScanner;
 			sourceTree = "<group>";
@@ -257,6 +262,7 @@
 				AAC97ECC15D0289700B9E327 /* CSSaneOptionConstraint.m in Sources */,
 				AAC97ECF15D0297200B9E327 /* CSSaneOptionRangeConstraint.m in Sources */,
 				AAC97ED215D0370500B9E327 /* CSSaneOptionEnumConstraint.m in Sources */,
+				AA02A6E015D159BE008B329A /* CSSequentialDataProvider.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

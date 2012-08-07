@@ -547,22 +547,6 @@ typedef enum {
     return noErr;
 }
 
-- (void) writeImageAsTiff:(CGImageRef)image toFile:(NSString*)file
-{
-    int compression = NSTIFFCompressionLZW;  // non-lossy LZW compression
-	CFMutableDictionaryRef mSaveMetaAndOpts = CFDictionaryCreateMutable(nil, 0,
-																		&kCFTypeDictionaryKeyCallBacks,  &kCFTypeDictionaryValueCallBacks);
-	CFMutableDictionaryRef tiffProfsMut = CFDictionaryCreateMutable(nil, 0,
-																	&kCFTypeDictionaryKeyCallBacks,  &kCFTypeDictionaryValueCallBacks);
-	CFDictionarySetValue(tiffProfsMut, kCGImagePropertyTIFFCompression, CFNumberCreate(NULL, kCFNumberIntType, &compression));
-	CFDictionarySetValue(mSaveMetaAndOpts, kCGImagePropertyTIFFDictionary, tiffProfsMut);
-    
-	NSURL *outURL = [[NSURL alloc] initFileURLWithPath:file];
-	CGImageDestinationRef dr = CGImageDestinationCreateWithURL((__bridge CFURLRef)outURL, (__bridge CFStringRef)@"public.tiff" , 1, NULL);
-	CGImageDestinationAddImage(dr, image, mSaveMetaAndOpts);
-	CGImageDestinationFinalize(dr);
-}
-
 @end
 
 @implementation CSSaneNetScanner (Progress)

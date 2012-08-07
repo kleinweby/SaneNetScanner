@@ -100,12 +100,14 @@ ICAError ICD_ScannerOpenTCPIPDevice(CFDictionaryRef params,
 
 ICAError ICD_ScannerCloseDevice(ScannerObjectInfo* deviceObjectInfo)
 {
-    assert(false);
+    CSSaneNetScanner* scanner = CFBridgingRelease(deviceObjectInfo->privateData);
+#pragma unused(scanner)
+    return noErr;
 }
 
 ICAError ICD_ScannerCleanup(ScannerObjectInfo* objectInfo)
 {
-    assert(false);
+    return noErr;
 }
 
 ICAError ICD_ScannerReadFileData(const ScannerObjectInfo* objectInfo,

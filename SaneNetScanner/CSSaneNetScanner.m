@@ -130,7 +130,6 @@ typedef enum {
     
     // Add key indicating that the module supports using the ICA Raw File
     // as a backing store for image io
-//    [dict setObject:[NSNumber numberWithInt:1] forKey:@"supportsICARawFileFormat"];
     [dict setObject:[NSNumber numberWithInt:1]
              forKey:@"supportsICARawFileFormat"];
     

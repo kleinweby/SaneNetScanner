@@ -76,7 +76,7 @@ typedef enum {
 {
     self = [super init];
     if (self) {
-        LogMessageCompat(@"Params %@", params);
+        Log(@"Params %@", params);
         
         self.open = NO;
         self.saneHandle = 0;
@@ -89,7 +89,7 @@ typedef enum {
 - (void)dealloc
 {
     if (self.open || self.saneHandle != 0) {
-        LogMessageCompat(@"Deallocating but sane handle is still open");
+        Log(@"Deallocating but sane handle is still open");
         sane_close(self.saneHandle);
         self.saneHandle = 0;
     }
@@ -97,7 +97,7 @@ typedef enum {
 
 - (ICAError) openSession:(ICD_ScannerOpenSessionPB*)params
 {
-    LogMessageCompat(@"Open session");
+    Log(@"Open session");
     if (self.open)
         return kICAInvalidSessionErr;    
     
@@ -120,7 +120,7 @@ typedef enum {
 
 - (ICAError) closeSession:(ICD_ScannerCloseSessionPB*)params
 {
-    LogMessageCompat(@"Close session");
+    Log(@"Close session");
 
     if (!self.open)
         return kICAInvalidSessionErr;
@@ -145,14 +145,14 @@ typedef enum {
     [dict setObject:[NSNumber numberWithInt:1]
              forKey:@"supportsICARawFileFormat"];
     
-    LogMessageCompat(@"addPropertiesToDictitonary:%@", dict);
+    Log(@"addPropertiesToDictitonary:%@", dict);
     
     return noErr;
 }
 
 - (ICAError) getParameters:(ICD_ScannerGetParametersPB*)params
 {
-    LogMessageCompat(@"Get params");
+    Log(@"Get params");
     NSMutableDictionary* dict = (__bridge NSMutableDictionary*)(params->theDict);
     
     if (!dict)
@@ -228,7 +228,7 @@ typedef enum {
             }
         }
         else {
-            LogMessageCompat(@"Option %@ not exported", option);
+            Log(@"Option %@ not exported", option);
         }
     }
     
@@ -248,14 +248,14 @@ typedef enum {
              forKey:@"device"];
     self.deviceProperties = deviceDict;
     
-    LogMessageCompat(@"Updated parameters %@", dict);
+    Log(@"Updated parameters %@", dict);
     
     return noErr;
 }
 
 - (ICAError) setParameters:(ICD_ScannerSetParametersPB*)params
 {
-    LogMessageCompat(@"Set params: %@", params->theDict);
+    Log(@"Set params: %@", params->theDict);
     NSDictionary* dict = ((__bridge NSDictionary *)(params->theDict))[@"userScanArea"];
 
     
@@ -284,7 +284,7 @@ typedef enum {
                 option.value = @"Color";
             }
             else {
-                LogMessageCompat(@"Unkown colorsyncmode %@", syncMode);
+                Log(@"Unkown colorsyncmode %@", syncMode);
             }
         }
         // X and Y resolution are always equal
@@ -373,40 +373,40 @@ typedef enum {
 
 - (ICAError) status:(ICD_ScannerStatusPB*)params
 {
-    LogMessageCompat( @"status");
+    Log( @"status");
     
     return paramErr;
 }
 
 - (ICAError) start:(ICD_ScannerStartPB*)params
 {
-    LogMessageCompat(@"Start");
+    Log(@"Start");
     SANE_Status status;
     SANE_Parameters parameters;
         
     [self showWarmUpMessage];
-    LogMessageCompat(@"sane_start");
+    Log(@"sane_start");
     status = sane_start(self.saneHandle);
     
     if (status != SANE_STATUS_GOOD) {
-        LogMessageCompat(@"sane_start failed: %s", sane_strstatus(status));
+        Log(@"sane_start failed: %s", sane_strstatus(status));
         return kICADeviceInternalErr;
     }
     
-    LogMessageCompat(@"sane_get_parameters");
+    Log(@"sane_get_parameters");
     status = sane_get_parameters(self.saneHandle, &parameters);
     
     if (status != SANE_STATUS_GOOD) {
-        LogMessageCompat(@"sane_get_parameters failed: %s", sane_strstatus(status));
+        Log(@"sane_get_parameters failed: %s", sane_strstatus(status));
         sane_cancel(self.saneHandle);
         return kICADeviceInternalErr;
     }
-    LogMessageCompat(@"sane_get_parameters: last_frame=%u, bytes_per_line=%u, pixels_per_line=%u, lines=%u, depth=%u", parameters.last_frame, parameters.bytes_per_line, parameters.pixels_per_line, parameters.lines, parameters.depth);
+    Log(@"sane_get_parameters: last_frame=%u, bytes_per_line=%u, pixels_per_line=%u, lines=%u, depth=%u", parameters.last_frame, parameters.bytes_per_line, parameters.pixels_per_line, parameters.lines, parameters.depth);
     
     [self doneWarmUpMessage];
     
     
-    LogMessageCompat(@"Prepare raw file");
+    Log(@"Prepare raw file");
     NSFileHandle* rawFileHandle;
     
     if (![self.documentType isEqualToString:@"com.apple.ica.raw"]) {
@@ -429,7 +429,7 @@ typedef enum {
          withSaneParameters:&parameters];
 
     
-    LogMessageCompat(@"Prepare buffers");
+    Log(@"Prepare buffers");
     int bufferSize;
     int bufferdRows;
     NSMutableData* buffer;
@@ -443,9 +443,9 @@ typedef enum {
     
     buffer = [NSMutableData dataWithLength:bufferSize];
     
-    LogMessageCompat(@"Choose to buffer %u rows (%u in size)", bufferdRows, bufferSize);
+    Log(@"Choose to buffer %u rows (%u in size)", bufferdRows, bufferSize);
     
-    LogMessageCompat(@"Begin reading");
+    Log(@"Begin reading");
     int row = 0;
     
     do {
@@ -516,7 +516,7 @@ typedef enum {
             if (ICDSendNotificationAndWaitForReply(&notePB) == noErr)
             {
                 if (notePB.replyCode == userCanceledErr) {
-                    LogMessageCompat(@"User canceled. Clean up...");
+                    Log(@"User canceled. Clean up...");
                     sane_cancel(self.saneHandle);
                     
                     [self sendTransactionCanceledMessage];
@@ -524,7 +524,7 @@ typedef enum {
                 }
             }
         }
-        LogMessageCompat(@"Read line %i", row);
+        Log(@"Read line %i", row);
         row+=bufferdRows;
     } while (status == SANE_STATUS_GOOD);
 
@@ -540,7 +540,7 @@ typedef enum {
     
     sane_cancel(self.saneHandle);
     
-    LogMessageCompat(@"Done...");
+    Log(@"Done...");
     [self pageDoneMessage];
     [self scanDoneMessage];
     

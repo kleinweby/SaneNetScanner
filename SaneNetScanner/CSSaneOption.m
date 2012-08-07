@@ -107,7 +107,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      values, 0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Failed get %@: %s", self, sane_strstatus(status));
+            Log(@"Failed get %@: %s", self, sane_strstatus(status));
             return;
         }
         
@@ -144,7 +144,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      values, 0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Failed get %@: %s", self, sane_strstatus(status));
+            Log(@"Failed get %@: %s", self, sane_strstatus(status));
             return;
         }
         
@@ -181,7 +181,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      value, 0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Failed get %@: %s", self, sane_strstatus(status));
+            Log(@"Failed get %@: %s", self, sane_strstatus(status));
             return;
         }
         
@@ -202,7 +202,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      values, 0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Failed get %@: %s", self, sane_strstatus(status));
+            Log(@"Failed get %@: %s", self, sane_strstatus(status));
             return;
         }
         
@@ -226,7 +226,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
         free(values);
     }
     else {
-        LogMessageCompat(@"Unsupported type %@", self);
+        Log(@"Unsupported type %@", self);
     }
 }
 
@@ -238,14 +238,14 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
         NSString* string = self.value;
         
         if (![string isKindOfClass:[NSString class]]) {
-            LogMessageCompat(@"%@ requires string but is %@", self, self.value);
+            Log(@"%@ requires string but is %@", self, self.value);
             return;
         }
         
         str = malloc(self.descriptor->size);
         strncpy(str, [string UTF8String], self.descriptor->size);
         
-        LogMessageCompat(@"Set \"%@\" to \"%@\"", self.name, self.value);
+        Log(@"Set \"%@\" to \"%@\"", self.name, self.value);
         status = sane_control_option(self.saneHandle,
                                      self.saneOptionNumber,
                                      SANE_ACTION_SET_VALUE,
@@ -253,21 +253,21 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Set failed %@: %s", self, sane_strstatus(status));
+            Log(@"Set failed %@: %s", self, sane_strstatus(status));
             return;
         }
         free(str);
     }
     else if (self.descriptor->type == SANE_TYPE_FIXED) {
         if (self.descriptor->size != sizeof(SANE_Fixed)) {
-            LogMessageCompat(@"Dont support multi-size fixed type set yet.");
+            Log(@"Dont support multi-size fixed type set yet.");
             return;
         }
         
         SANE_Fixed value = SANE_FIX([self.value doubleValue]);
         SANE_Status status;
         
-        LogMessageCompat(@"Set \"%@\" to \"%@\"", self.name, self.value);
+        Log(@"Set \"%@\" to \"%@\"", self.name, self.value);
         status = sane_control_option(self.saneHandle,
                                      self.saneOptionNumber,
                                      SANE_ACTION_SET_VALUE,
@@ -275,20 +275,20 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Set failed %@: %s", self, sane_strstatus(status));
+            Log(@"Set failed %@: %s", self, sane_strstatus(status));
             return;
         }
     }
     else if (self.descriptor->type == SANE_TYPE_INT) {
         if (self.descriptor->size != sizeof(SANE_Int)) {
-            LogMessageCompat(@"Dont support multi-size int type set yet.");
+            Log(@"Dont support multi-size int type set yet.");
             return;
         }
         
         SANE_Int value = [self.value intValue];
         SANE_Status status;
         
-        LogMessageCompat(@"Set \"%@\" to \"%@\"", self.name, self.value);
+        Log(@"Set \"%@\" to \"%@\"", self.name, self.value);
         status = sane_control_option(self.saneHandle,
                                      self.saneOptionNumber,
                                      SANE_ACTION_SET_VALUE,
@@ -296,20 +296,20 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Set failed %@: %s", self, sane_strstatus(status));
+            Log(@"Set failed %@: %s", self, sane_strstatus(status));
             return;
         }
     }
     else if (self.descriptor->type == SANE_TYPE_BOOL) {
         if (self.descriptor->size != sizeof(SANE_Bool)) {
-            LogMessageCompat(@"Dont support multi-size bool type set yet.");
+            Log(@"Dont support multi-size bool type set yet.");
             return;
         }
         
         SANE_Bool value = [self.value intValue];
         SANE_Status status;
         
-        LogMessageCompat(@"Set \"%@\" to \"%@\"", self.name, value ? @"true" : @"false");
+        Log(@"Set \"%@\" to \"%@\"", self.name, value ? @"true" : @"false");
         status = sane_control_option(self.saneHandle,
                                      self.saneOptionNumber,
                                      SANE_ACTION_SET_VALUE,
@@ -317,12 +317,12 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
                                      0);
         
         if (status != SANE_STATUS_GOOD) {
-            LogMessageCompat(@"Set failed %@: %s", self, sane_strstatus(status));
+            Log(@"Set failed %@: %s", self, sane_strstatus(status));
             return;
         }
     }
     else {
-        LogMessageCompat(@"Unsuported set type.");
+        Log(@"Unsuported set type.");
     }
 }
 

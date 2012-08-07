@@ -8,3 +8,12 @@
 
 #include "LoggerClient.h"
 
+#ifdef DEBUG
+
+#define Log(FMT, ARGS...) LogMessageCompat(FMT, ##ARGS)
+
+#else
+
+#define Log(FMT, ARGS...) 
+
+#endif

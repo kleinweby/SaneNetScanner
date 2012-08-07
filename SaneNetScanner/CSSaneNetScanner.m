@@ -315,10 +315,8 @@ typedef enum {
     LogMessageCompat(@"Start");
     SANE_Status status;
     SANE_Parameters parameters;
-    NSFileHandle* file;
     
     LogMessageCompat(@"Open file %@", self.documentPath);
-    NSError* error = nil;
     
     [self showWarmUpMessage];
     LogMessageCompat(@"sane_start");
@@ -404,16 +402,6 @@ typedef enum {
             [rawFileHandle writeData:buffer];
         }
         
-        // Send the progress and check if the user
-        // canceled the scan
-        if (ICDSendNotificationAndWaitForReply(&notePB) == noErr)
-        {
-            if (notePB.replyCode == userCanceledErr) {
-                LogMessageCompat(@"User canceled. Clean up...");
-                sane_cancel(self.saneHandle);
-                
-                [self sendTransactionCanceledMessage];
-                return noErr;
         // Notify the image capture kit that we made progress
         if (self.progressNotifications != ProgressNotificationsNone) {
             ICASendNotificationPB notePB = {};

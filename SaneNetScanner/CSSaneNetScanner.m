@@ -118,6 +118,15 @@ static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
     return self;
 }
 
+- (void)dealloc
+{
+    if (self.open || self.saneHandle != 0) {
+        LogMessageCompat(@"Deallocating but sane handle is still open");
+        sane_close(self.saneHandle);
+        self.saneHandle = 0;
+    }
+}
+
 - (ICAError) openSession:(ICD_ScannerOpenSessionPB*)params
 {
     LogMessageCompat(@"Open session");

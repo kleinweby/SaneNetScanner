@@ -13,6 +13,12 @@
 
 #include "sane/sane.h"
 
+typedef enum {
+    ProgressNotificationsNone,
+    ProgressNotificationsWithData,
+    ProgressNotificationsWithoutData
+} ProgressNotifications;
+
 @interface CSSaneNetScanner ()
 
 @property (nonatomic, strong) NSString* prettyName;
@@ -27,6 +33,11 @@
 
 @property (nonatomic) NSArray* saneOptions;
 
+@property (nonatomic) ProgressNotifications progressNotifications;
+@property (nonatomic) BOOL produceFinalScan;
+
+@property (nonatomic) NSString* colorSyncMode;
+
 @end
 
 @interface CSSaneNetScanner (Progress)
@@ -37,6 +48,13 @@
 - (void) scanDoneMessage;
 
 - (void) sendTransactionCanceledMessage;
+
+@end
+
+@interface CSSaneNetScanner (ICARawFile)
+
+- (void) writeHeaderToFile:(NSFileHandle*)handle
+        withSaneParameters:(SANE_Parameters*)parameters;
 
 @end
 
@@ -103,9 +121,7 @@
 }
 
 - (ICAError) addPropertiesToDictitonary:(NSMutableDictionary*)dict
-{
-    LogMessageCompat(@"addPropertiesToDictitonary:%@", dict);
-    
+{    
     // Add kICAUserAssignedDeviceNameKey.  Since this key is a simple NSString,
     // the value may be of any length.  This key supercedes any name already
     // provided in the device information before, which is limited to 32 characters.
@@ -115,6 +131,10 @@
     // Add key indicating that the module supports using the ICA Raw File
     // as a backing store for image io
 //    [dict setObject:[NSNumber numberWithInt:1] forKey:@"supportsICARawFileFormat"];
+    [dict setObject:[NSNumber numberWithInt:1]
+             forKey:@"supportsICARawFileFormat"];
+    
+    LogMessageCompat(@"addPropertiesToDictitonary:%@", dict);
     
     return noErr;
 }
@@ -262,7 +282,23 @@
                 option.value = @0;
             }
         }
+        
+    if ([dict[@"progressNotificationWithData"] boolValue]) {
+        self.progressNotifications = ProgressNotificationsWithData;
     }
+    else if ([dict[@"progressNotificationNoData"] boolValue]) {
+        self.progressNotifications = ProgressNotificationsWithoutData;
+    }
+    else {
+        self.progressNotifications = ProgressNotificationsNone;
+    }
+    
+    if ([dict[@"scan mode"] isEqualToString:@"overview"])
+        self.produceFinalScan = NO;
+    else
+        self.produceFinalScan = YES;
+    
+    self.colorSyncMode = dict[@"ColorSyncMode"];
     
     return noErr;
 }
@@ -304,6 +340,20 @@
     LogMessageCompat(@"sane_get_parameters: last_frame=%u, bytes_per_line=%u, pixels_per_line=%u, lines=%u, depth=%u", parameters.last_frame, parameters.bytes_per_line, parameters.pixels_per_line, parameters.lines, parameters.depth);
     
     [self doneWarmUpMessage];
+    
+    
+    LogMessageCompat(@"Prepare raw file");
+    NSFileHandle* rawFileHandle;
+    
+    [[NSFileManager defaultManager] createFileAtPath:self.documentPath
+                                            contents:nil
+                                          attributes:nil];
+    rawFileHandle = [NSFileHandle fileHandleForWritingAtPath:self.documentPath];
+    
+    // Write header
+    [self writeHeaderToFile:rawFileHandle
+         withSaneParameters:&parameters];
+
     
     LogMessageCompat(@"Prepare buffers");
     int bufferSize;
@@ -349,26 +399,9 @@
         // (may happen for the last block)
         [buffer setLength:filled];
 
-        // Notify the image capture kit that we made progress
-        ICASendNotificationPB notePB = {};
-        NSMutableDictionary* d = [@{
-            (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
-            (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
-        } mutableCopy];
-        
-        notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)d;
-
-        
-        // Send inline image data
-        if (true) {
-            ICDAddImageInfoToNotificationDictionary(notePB.notificationDictionary,
-                                                    parameters.pixels_per_line,
-                                                    parameters.lines,
-                                                    parameters.bytes_per_line,
-                                                    row,
-                                                    bufferdRows,
-                                                    (UInt32)[buffer length],
-                                                    (void*)[buffer bytes]);
+        // Means we have to save the data somewhere
+        if (self.produceFinalScan) {
+            [rawFileHandle writeData:buffer];
         }
         
         // Send the progress and check if the user
@@ -381,29 +414,60 @@
                 
                 [self sendTransactionCanceledMessage];
                 return noErr;
+        // Notify the image capture kit that we made progress
+        if (self.progressNotifications != ProgressNotificationsNone) {
+            ICASendNotificationPB notePB = {};
+            NSMutableDictionary* d = [@{
+                                      (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+                                      (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
+                                      } mutableCopy];
+            
+            notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)d;
+            
+            // Add image with data
+            if (self.progressNotifications == ProgressNotificationsWithData) {
+                ICDAddImageInfoToNotificationDictionary(notePB.notificationDictionary,
+                                                        parameters.pixels_per_line,
+                                                        parameters.lines,
+                                                        parameters.bytes_per_line,
+                                                        row,
+                                                        bufferdRows,
+                                                        (UInt32)[buffer length],
+                                                        (void*)[buffer bytes]);
+            }
+            // Add image info without data
+            else {
+                ICDAddImageInfoToNotificationDictionary(notePB.notificationDictionary,
+                                                        parameters.pixels_per_line,
+                                                        parameters.lines,
+                                                        parameters.bytes_per_line,
+                                                        row,
+                                                        bufferdRows,
+                                                        0,
+                                                        NULL);
+            }
+            
+            // Send the progress and check if the user
+            // canceled the scan
+            if (ICDSendNotificationAndWaitForReply(&notePB) == noErr)
+            {
+                if (notePB.replyCode == userCanceledErr) {
+                    LogMessageCompat(@"User canceled. Clean up...");
+                    sane_cancel(self.saneHandle);
+                    
+                    [self sendTransactionCanceledMessage];
+                    return noErr;
+                }
             }
         }
         LogMessageCompat(@"Read line %i", row);
         row+=bufferdRows;
     } while (status == SANE_STATUS_GOOD);
 
-//    ICASendNotificationPB notePB = {
-//        .notificationDictionary = (__bridge_retained CFMutableDictionaryRef)[@{
-//        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
-//        (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
-//        } mutableCopy]
-//    };
-//    
-//    ICDAddImageInfoToNotificationDictionary(notePB.notificationDictionary,
-//                                            parameters.pixels_per_line,
-//                                            parameters.lines,
-//                                            parameters.bytes_per_line,
-//                                            0,
-//                                            parameters.lines,
-//                                            (UInt32)[data length],
-//                                            (void*)[data bytes]);
-//    
-//	ICDSendNotification( &notePB );
+    // We now need to read the raw file and produce a formatted version
+    if (self.produceFinalScan) {
+        
+    }
     
 //    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
 //    CGImageRef image = CGImageCreate(parameters.pixels_per_line,
@@ -516,6 +580,40 @@
     notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
 	ICDSendNotification( &notePB );
+}
+
+@end
+
+@implementation CSSaneNetScanner (ICARawFile)
+
+- (void) writeHeaderToFile:(NSFileHandle*)handle
+        withSaneParameters:(SANE_Parameters*)parameters
+{
+    ICARawFileHeader h;
+    NSString* profilePath = [NSTemporaryDirectory() stringByAppendingFormat:@"vs-%d",getpid()];
+    
+    h.imageDataOffset      = sizeof(ICARawFileHeader);
+    h.version              = 1;
+    h.imageWidth           = parameters->pixels_per_line;
+    h.imageHeight          = parameters->lines;
+    h.bytesPerRow          = parameters->bytes_per_line;
+    h.bitsPerComponent     = parameters->depth;
+    h.bitsPerPixel         = 3 * parameters->depth;
+    h.numberOfComponents   = 3;
+    h.cgColorSpaceModel    = CGColorSpaceGetModel(ICDCreateColorSpace(3 * parameters->depth,
+                                                                      3,
+                                                                      self.scannerObjectInfo->icaObject,
+                                                                      (__bridge CFStringRef)(self.colorSyncMode),
+                                                                      NULL,
+                                                                      (char*)[profilePath fileSystemRepresentation]));
+    h.bitmapInfo           = kCGImageAlphaNone;
+    h.dpi                  = 75;
+    h.orientation          = 1;
+    strlcpy(h.colorSyncModeStr, [self.colorSyncMode UTF8String], sizeof(h.colorSyncModeStr));
+    
+    [handle writeData:[NSData dataWithBytesNoCopy:&h
+                                           length:sizeof(ICARawFileHeader)
+                                     freeWhenDone:NO]];
 }
 
 @end

@@ -12,68 +12,6 @@
 #import "CSSaneOptionRangeConstraint.h"
 
 #include "sane/sane.h"
-#include "sane/saneopts.h"
-
-static void AddConstraintToDict(const SANE_Option_Descriptor* descriptior,
-                                NSMutableDictionary* dict) {
-    
-    switch (descriptior->constraint_type) {
-        case SANE_CONSTRAINT_NONE:
-            break;
-        case SANE_CONSTRAINT_RANGE:
-            if (descriptior->type == SANE_TYPE_FIXED) {
-                double min = SANE_UNFIX(descriptior->constraint.range->min);
-                double max = SANE_UNFIX(descriptior->constraint.range->max);
-                double quant = SANE_UNFIX(descriptior->constraint.range->quant);
-                
-                dict[@"type"] = @"TWON_RANGE";
-                dict[@"min"] = [NSNumber numberWithDouble:min];
-                dict[@"max"] = [NSNumber numberWithDouble:max];
-                dict[@"stepSize"] = [NSNumber numberWithDouble:quant];
-            }
-            else if (descriptior->type == SANE_TYPE_INT) {
-                dict[@"type"] = @"TWON_RANGE";
-                dict[@"min"] = [NSNumber numberWithInt:descriptior->constraint.range->min];
-                dict[@"max"] = [NSNumber numberWithInt:descriptior->constraint.range->max];
-                dict[@"stepSize"] = [NSNumber numberWithInt:descriptior->constraint.range->quant];
-            }
-            else {
-                LogMessageCompat(@"Value type not supportet!");
-                assert(false);
-            }
-            break;
-        case SANE_CONSTRAINT_WORD_LIST:
-        {
-            SANE_Word length = descriptior->constraint.word_list[0];
-            NSMutableArray* list = [NSMutableArray arrayWithCapacity:length];
-            
-            for (SANE_Word i = 1; i < length + 1; i++) {
-                if (descriptior->type == SANE_TYPE_FIXED) {
-                    [list addObject:[NSNumber numberWithDouble:SANE_UNFIX(descriptior->constraint.word_list[i])]];
-                }
-                else if (descriptior->type == SANE_TYPE_INT) {
-                    [list addObject:[NSNumber numberWithInt:descriptior->constraint.word_list[i]]];
-                }
-            }
-        }
-        case SANE_CONSTRAINT_STRING_LIST:
-        {
-            NSMutableArray* list = [NSMutableArray array];
-            const char* const * ptr = descriptior->constraint.string_list;
-            while (*ptr != NULL) {
-                const char* const str = *ptr;
-                
-                [list addObject:[NSString stringWithUTF8String:str]];
-                
-                ptr++;
-            }
-            
-            dict[@"values"] = list;
-        }
-        default:
-            break;
-    }
-}
 
 @interface CSSaneNetScanner ()
 

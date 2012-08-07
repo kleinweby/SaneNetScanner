@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BonjourNetwork</key>
+	<dict>
+		<key>_sane-scanner._tcp.</key>
+		<array>
+			<dict>
+				<key>device events</key>
+				<array>
+					<string>scan</string>
+				</array>
+				<key>device type</key>
+				<string>scanner</string>
+				<key>ICABonjourTXTRecordKey</key>
+				<dict>
+					<key>saned</key>
+					<string>YES</string>
+				</dict>
+			</dict>
+		</array>
+	</dict>
+	<key>Version</key>
+	<string>1.0</string>
+</dict>
+</plist>

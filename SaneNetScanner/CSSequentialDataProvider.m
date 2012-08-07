@@ -64,6 +64,7 @@ static CGDataProviderSequentialCallbacks callbacks = {0, __getBytes, __skipBytes
     self = [super init];
     if (self) {
         self.fileHandle = fopen([[url path] fileSystemRepresentation], "r");
+        self.hardOffset = hardOffset;
         [self rewind];
     }
     return self;

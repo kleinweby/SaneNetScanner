@@ -19,6 +19,7 @@
 		AA45B45815CEF529004A8357 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B45615CEF517004A8357 /* Carbon.framework */; };
 		AA45B46815CF0451004A8357 /* LoggerClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AA45B46615CF0451004A8357 /* LoggerClient.m */; };
 		AA45B46B15CF04F1004A8357 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA45B46A15CF04F1004A8357 /* SystemConfiguration.framework */; };
+		AA7A28AE15D16ECE000522A7 /* DeviceMatchingInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = AA7A28AD15D16ECE000522A7 /* DeviceMatchingInfo.plist */; };
 		AAC97EC915D0137600B9E327 /* CSSaneOption.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC97EC815D0137600B9E327 /* CSSaneOption.m */; };
 		AAC97ECC15D0289700B9E327 /* CSSaneOptionConstraint.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC97ECB15D0289700B9E327 /* CSSaneOptionConstraint.m */; };
 		AAC97ECF15D0297200B9E327 /* CSSaneOptionRangeConstraint.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC97ECE15D0297200B9E327 /* CSSaneOptionRangeConstraint.m */; };
@@ -52,6 +53,7 @@
 		AA45B46715CF0451004A8357 /* LoggerCommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LoggerCommon.h; sourceTree = "<group>"; };
 		AA45B46915CF0466004A8357 /* Log.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Log.h; sourceTree = "<group>"; };
 		AA45B46A15CF04F1004A8357 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		AA7A28AD15D16ECE000522A7 /* DeviceMatchingInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = DeviceMatchingInfo.plist; sourceTree = "<group>"; };
 		AAC97EC715D0137600B9E327 /* CSSaneOption.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CSSaneOption.h; sourceTree = "<group>"; };
 		AAC97EC815D0137600B9E327 /* CSSaneOption.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CSSaneOption.m; sourceTree = "<group>"; };
 		AAC97ECA15D0289700B9E327 /* CSSaneOptionConstraint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CSSaneOptionConstraint.h; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 		AA45B42D15CED4D9004A8357 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				AA7A28AD15D16ECE000522A7 /* DeviceMatchingInfo.plist */,
 				AA45B42E15CED4D9004A8357 /* SaneNetScanner-Info.plist */,
 				AA45B42F15CED4D9004A8357 /* InfoPlist.strings */,
 				AA45B43215CED4D9004A8357 /* main.m */,
@@ -244,6 +247,7 @@
 			files = (
 				AA45B43115CED4D9004A8357 /* InfoPlist.strings in Resources */,
 				AA45B43715CED4D9004A8357 /* Credits.rtf in Resources */,
+				AA7A28AE15D16ECE000522A7 /* DeviceMatchingInfo.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

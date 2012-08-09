@@ -25,6 +25,9 @@ typedef enum {
 
 @property (nonatomic, strong) NSString* prettyName;
 
+@property (nonatomic, strong) NSString* deviceName;
+@property (nonatomic, strong) NSArray* saneAdresses;
+
 @property (nonatomic, strong) NSMutableDictionary* deviceProperties;
 
 @property (nonatomic) BOOL open;
@@ -79,9 +82,16 @@ typedef enum {
         Log(@"Params %@", params);
         
         self.open = NO;
-        self.saneHandle = 0;
-        
+        self.saneHandle = 0;        
         self.prettyName = params[(NSString*)kICABonjourServiceNameKey];
+        self.deviceName = [[NSString alloc] initWithData:params[(NSString*)kICABonjourTXTRecordKey][@"deviceName"]
+                                             encoding:NSUTF8StringEncoding];
+        self.saneAdresses = @[];
+        if (params[@"ipAddress"])
+            self.saneAdresses = [self.saneAdresses arrayByAddingObject:params[@"ipAddress"]];
+        if (params[@"ipAddress_v6"])
+            self.saneAdresses = [self.saneAdresses arrayByAddingObject:
+                                 [NSString stringWithFormat:@"[%@]", params[@"ipAddress_v6"]]];
     }
     return self;
 }
@@ -103,9 +113,20 @@ typedef enum {
     
     SANE_Handle handle;
     SANE_Status status;
-    NSString* deviceName = @"10.0.1.5:mustek_usb:libusb:001:008";
     
-    status = sane_open([deviceName UTF8String], &handle);
+    for (NSString* address in self.saneAdresses) {
+        NSString* fullName = [NSString stringWithFormat:@"%@:%@", address, self.deviceName];
+        
+        Log(@"Try open to %@", fullName);
+        status = sane_open([fullName UTF8String], &handle);
+        
+        // If open succeeded we can quit tring
+        if (status == SANE_STATUS_GOOD)
+            break;
+        else {
+            Log(@"Failed width %s", sane_strstatus(status));
+        }
+    }
     
     if (status == SANE_STATUS_GOOD) {
         self.open = YES;

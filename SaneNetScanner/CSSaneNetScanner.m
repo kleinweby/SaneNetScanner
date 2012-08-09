@@ -426,7 +426,6 @@ typedef enum {
     
     [self doneWarmUpMessage];
     
-    
     Log(@"Prepare raw file");
     NSFileHandle* rawFileHandle;
     
@@ -574,7 +573,6 @@ typedef enum {
 
 - (void) showWarmUpMessage
 {
-    // TODO: this probbably leaks the dictinonary
     ICASendNotificationPB notePB = {};
     NSMutableDictionary* dict = [@{
             (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
@@ -596,7 +594,7 @@ typedef enum {
     } mutableCopy];
     notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
-	ICDSendNotification( &notePB );
+	ICDSendNotification(&notePB);
 }
 
 - (void) pageDoneMessage

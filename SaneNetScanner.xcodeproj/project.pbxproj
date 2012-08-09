@@ -349,6 +349,7 @@
 				GCC_PREFIX_HEADER = "SaneNetScanner/SaneNetScanner-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/sane\"";
 				INFOPLIST_FILE = "SaneNetScanner/SaneNetScanner-Info.plist";
+				INSTALL_PATH = "/Library/Image Capture/Devices";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/sane\"",
@@ -366,6 +367,7 @@
 				GCC_PREFIX_HEADER = "SaneNetScanner/SaneNetScanner-Prefix.pch";
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/sane\"";
 				INFOPLIST_FILE = "SaneNetScanner/SaneNetScanner-Info.plist";
+				INSTALL_PATH = "/Library/Image Capture/Devices";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/sane\"",

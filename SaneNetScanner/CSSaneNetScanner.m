@@ -25,13 +25,15 @@ typedef enum {
 
 @property (nonatomic, strong) NSString* prettyName;
 
+@property (nonatomic, strong) NSString* deviceName;
+@property (nonatomic, strong) NSArray* saneAdresses;
+
 @property (nonatomic, strong) NSMutableDictionary* deviceProperties;
+@property (nonatomic, strong) NSDictionary* saneOptions;
 
 @property (nonatomic) BOOL open;
 
 @property (nonatomic) SANE_Handle saneHandle;
-
-@property (nonatomic) NSArray* saneOptions;
 
 @property (nonatomic) ProgressNotifications progressNotifications;
 @property (nonatomic) BOOL produceFinalScan;
@@ -43,6 +45,8 @@ typedef enum {
 @property (nonatomic) NSURL* rawFileURL;
 @property (nonatomic) NSURL* documentURL;
 @property (nonatomic) NSString* documentType;
+
+- (UInt32) numberOfComponents;
 
 @end
 
@@ -79,9 +83,16 @@ typedef enum {
         Log(@"Params %@", params);
         
         self.open = NO;
-        self.saneHandle = 0;
-        
+        self.saneHandle = 0;        
         self.prettyName = params[(NSString*)kICABonjourServiceNameKey];
+        self.deviceName = [[NSString alloc] initWithData:params[(NSString*)kICABonjourTXTRecordKey][@"deviceName"]
+                                             encoding:NSUTF8StringEncoding];
+        self.saneAdresses = @[];
+        if (params[@"ipAddress"])
+            self.saneAdresses = [self.saneAdresses arrayByAddingObject:params[@"ipAddress"]];
+        if (params[@"ipAddress_v6"])
+            self.saneAdresses = [self.saneAdresses arrayByAddingObject:
+                                 [NSString stringWithFormat:@"[%@]", params[@"ipAddress_v6"]]];
     }
     return self;
 }
@@ -103,9 +114,20 @@ typedef enum {
     
     SANE_Handle handle;
     SANE_Status status;
-    NSString* deviceName = @"10.0.1.5:mustek_usb:libusb:001:008";
     
-    status = sane_open([deviceName UTF8String], &handle);
+    for (NSString* address in self.saneAdresses) {
+        NSString* fullName = [NSString stringWithFormat:@"%@:%@", address, self.deviceName];
+        
+        Log(@"Try open to %@", fullName);
+        status = sane_open([fullName UTF8String], &handle);
+        
+        // If open succeeded we can quit tring
+        if (status == SANE_STATUS_GOOD)
+            break;
+        else {
+            Log(@"Failed width %s", sane_strstatus(status));
+        }
+    }
     
     if (status == SANE_STATUS_GOOD) {
         self.open = YES;
@@ -172,19 +194,27 @@ typedef enum {
         
     self.saneOptions = [CSSaneOption saneOptionsForHandle:self.saneHandle];
     
-    for (CSSaneOption* option in self.saneOptions) {
-        if ([option.name isEqualToString:kSaneScanResolution]) {
-            NSMutableDictionary* d = [NSMutableDictionary dictionary];
-            
-            [option.constraint addToDeviceDictionary:d];
-            d[@"current"] = option.value;
-            d[@"default"] = option.value;
-            
-            deviceDict[@"ICAP_XRESOLUTION"] = d;
-            deviceDict[@"ICAP_YRESOLUTION"] = d;
-        }
-        else if ([@[ kSaneTopLeftX, kSaneBottomRightX ] containsObject:option.name]) {
+    // Export the resolution
+    if (self.saneOptions[kSaneScanResolution]) {
+        NSMutableDictionary* d = [NSMutableDictionary dictionary];
+        CSSaneOption* option = self.saneOptions[kSaneScanResolution];
+        
+        [option.constraint addToDeviceDictionary:d];
+        d[@"current"] = option.value;
+        d[@"default"] = option.value;
+        
+        deviceDict[@"ICAP_XRESOLUTION"] = d;
+        deviceDict[@"ICAP_YRESOLUTION"] = d;
+    }
+    else {
+        Log(@"WARN: scanner does not support resolutions!?");
+    }
+    
+    // Export the physical width
+    for (NSString* name in @[ kSaneTopLeftX, kSaneBottomRightX ]) {
+        if (self.saneOptions[name]) {
             // Convert to inch (will be reported as mm)
+            CSSaneOption* option = self.saneOptions[name];
             CSSaneOptionRangeConstraint* constraint = (CSSaneOptionRangeConstraint*)option.constraint;
             double width = ([constraint.maxValue doubleValue] - [constraint.minValue doubleValue])/25.4;
             
@@ -192,21 +222,26 @@ typedef enum {
             if (deviceDict[@"ICAP_PHYSICALWIDTH"]) {
                 if ([deviceDict[@"ICAP_PHYSICALWIDTH"][@"value"] doubleValue] > width) {
                     deviceDict[@"ICAP_PHYSICALWIDTH"] = @{
-                        @"type": @"TWON_ONEVALUE",
-                        @"value": [NSNumber numberWithDouble:width]
+                    @"type": @"TWON_ONEVALUE",
+                    @"value": [NSNumber numberWithDouble:width]
                     };
                 }
             }
             // Not present yes, so set
             else {
                 deviceDict[@"ICAP_PHYSICALWIDTH"] = @{
-                    @"type": @"TWON_ONEVALUE",
-                    @"value": [NSNumber numberWithDouble:width]
+                @"type": @"TWON_ONEVALUE",
+                @"value": [NSNumber numberWithDouble:width]
                 };
             }
         }
-        else if ([@[ kSaneTopLeftY, kSaneBottomRightY ] containsObject:option.name]) {
+    }
+    
+    // Export the physical height
+    for (NSString* name in @[ kSaneTopLeftY, kSaneBottomRightY ]) {
+        if (self.saneOptions[name]) {
             // Convert to inch (will be reported as mm)
+            CSSaneOption* option = self.saneOptions[name];
             CSSaneOptionRangeConstraint* constraint = (CSSaneOptionRangeConstraint*)option.constraint;
             double height = ([constraint.maxValue doubleValue] - [constraint.minValue doubleValue])/25.4;
             
@@ -226,9 +261,6 @@ typedef enum {
                 @"value": [NSNumber numberWithDouble:height]
                 };
             }
-        }
-        else {
-            Log(@"Option %@ not exported", option);
         }
     }
     
@@ -276,78 +308,102 @@ typedef enum {
     }
         
     int unit = [dict[@"ICAP_UNITS"][@"value"] intValue];
+    
+    if (dict[@"ColorSyncMode"]) {
+        CSSaneOption* option = self.saneOptions[kSaneScanMode];
         
-    for (CSSaneOption* option in self.saneOptions) {
-        if ([option.name isEqualToString:kSaneScanMode] && dict[@"ColorSyncMode"]) {
-            NSString* syncMode = dict[@"ColorSyncMode"];
-            if ([syncMode isEqualToString:@"scanner.reflective.RGB.positive"]) {
-                option.value = @"Color";
-            }
-            else {
-                Log(@"Unkown colorsyncmode %@", syncMode);
-            }
+        NSString* syncMode = dict[@"ColorSyncMode"];
+        if ([syncMode isEqualToString:@"scanner.reflective.RGB.positive"]) {
+            option.value = @"Color";
         }
-        // X and Y resolution are always equal
-        else if ([option.name isEqualToString:kSaneScanResolution] && (dict[@"ICAP_XRESOLUTION"] || dict[@"ICAP_XRESOLUTION"])) {
-            if (unit == 1 /* Centimeter */) {
-                // Convert dpcm to dpi
-                // 1 dpcm = 2,54 dpi
-                option.value = [NSNumber numberWithDouble:[dict[@"ICAP_XRESOLUTION"][@"value"] doubleValue] / 2.54];
-            }
-            else if (unit == 0 /* Inches */) {
-                // Great nothing to to here =)
-                option.value = dict[@"ICAP_XRESOLUTION"][@"value"];
-            }
+        else if ([syncMode isEqualToString:@"scanner.reflective.Gray.positive"]) {
+            option.value = @"Gray";
         }
-        else if ([option.name isEqualToString:kSanePreview] && dict[@"scan mode"]) {
-            if ([dict[@"scan mode"] isEqualToString:@"overview"]) {
-                option.value = @1;
-            }
-            else {
-                option.value = @0;
-            }
+        else {
+            Log(@"Unkown colorsyncmode %@", syncMode);
         }
-        else if ([option.name isEqualToString:kSaneTopLeftX] && dict[@"offsetX"]) {
-            if (unit == 1 /* Centimeter */) {
-                // Convert cm to mm
-                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 10];
-            }
-            else if (unit == 0 /* Inches */) {
-                // Convert inches to mm
-                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 25.4];
-            }
+    }
+    
+    // X and Y resolution are always equal
+    if (dict[@"ICAP_XRESOLUTION"] || dict[@"ICAP_XRESOLUTION"]) {
+        CSSaneOption* option = self.saneOptions[kSaneScanResolution];
+        
+        if (unit == 1 /* Centimeter */) {
+            // Convert dpcm to dpi
+            // 1 dpcm = 2,54 dpi
+            option.value = [NSNumber numberWithDouble:[dict[@"ICAP_XRESOLUTION"][@"value"] doubleValue] / 2.54];
         }
-        else if ([option.name isEqualToString:kSaneTopLeftY] && dict[@"offsetY"]) {
-            if (unit == 1 /* Centimeter */) {
-                // Convert cm to mm
-                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 10];
-            }
-            else if (unit == 0 /* Inches */) {
-                // Convert inches to mm
-                option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 25.4];
-            }
+        else if (unit == 0 /* Inches */) {
+            // Great nothing to to here =)
+            option.value = dict[@"ICAP_XRESOLUTION"][@"value"];
         }
-        else if ([option.name isEqualToString:kSaneBottomRightX] && dict[@"width"]) {
-            double value = [dict[@"offsetX"] doubleValue] + [dict[@"width"] doubleValue];
-            if (unit == 1 /* Centimeter */) {
-                // Convert cm to mm
-                option.value = [NSNumber numberWithDouble:value * 10];
-            }
-            else if (unit == 0 /* Inches */) {
-                // Convert inches to mm
-                option.value = [NSNumber numberWithDouble:value * 25.4];
-            }
+        else {
+            Log(@"Unsupported unit");
         }
-        else if ([option.name isEqualToString:kSaneBottomRightY] && dict[@"height"]) {
-            double value = [dict[@"offsetY"] doubleValue] + [dict[@"height"] doubleValue];
-            if (unit == 1 /* Centimeter */) {
-                // Convert cm to mm
-                option.value = [NSNumber numberWithDouble:value * 10];
-            }
-            else if (unit == 0 /* Inches */) {
-                // Convert inches to mm
-                option.value = [NSNumber numberWithDouble:value * 25.4];
-            }
+    }
+    
+    if (dict[@"scan mode"]) {
+        CSSaneOption* option = self.saneOptions[kSanePreview];
+
+        if ([dict[@"scan mode"] isEqualToString:@"overview"]) {
+            option.value = @1;
+        }
+        else {
+            option.value = @0;
+        }
+    }
+    
+    if (dict[@"offsetX"]) {
+        CSSaneOption* option = self.saneOptions[kSaneTopLeftX];
+
+        if (unit == 1 /* Centimeter */) {
+            // Convert cm to mm
+            option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 10];
+        }
+        else if (unit == 0 /* Inches */) {
+            // Convert inches to mm
+            option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 25.4];
+        }
+    }
+    
+    if (dict[@"offsetX"]) {
+        CSSaneOption* option = self.saneOptions[kSaneTopLeftY];
+        
+        if (unit == 1 /* Centimeter */) {
+            // Convert cm to mm
+            option.value = [NSNumber numberWithDouble:[dict[@"offsetY"] doubleValue] * 10];
+        }
+        else if (unit == 0 /* Inches */) {
+            // Convert inches to mm
+            option.value = [NSNumber numberWithDouble:[dict[@"offsetY"] doubleValue] * 25.4];
+        }
+    }
+    
+    if (dict[@"width"]) {
+        CSSaneOption* option = self.saneOptions[kSaneBottomRightX];
+
+        double value = [dict[@"offsetX"] doubleValue] + [dict[@"width"] doubleValue];
+        if (unit == 1 /* Centimeter */) {
+            // Convert cm to mm
+            option.value = [NSNumber numberWithDouble:value * 10];
+        }
+        else if (unit == 0 /* Inches */) {
+            // Convert inches to mm
+            option.value = [NSNumber numberWithDouble:value * 25.4];
+        }
+    }
+    
+    if (dict[@"height"]) {
+        CSSaneOption* option = self.saneOptions[kSaneBottomRightY];
+        
+        double value = [dict[@"offsetY"] doubleValue] + [dict[@"height"] doubleValue];
+        if (unit == 1 /* Centimeter */) {
+            // Convert cm to mm
+            option.value = [NSNumber numberWithDouble:value * 10];
+        }
+        else if (unit == 0 /* Inches */) {
+            // Convert inches to mm
+            option.value = [NSNumber numberWithDouble:value * 25.4];
         }
     }
         
@@ -404,7 +460,6 @@ typedef enum {
     Log(@"sane_get_parameters: last_frame=%u, bytes_per_line=%u, pixels_per_line=%u, lines=%u, depth=%u", parameters.last_frame, parameters.bytes_per_line, parameters.pixels_per_line, parameters.lines, parameters.depth);
     
     [self doneWarmUpMessage];
-    
     
     Log(@"Prepare raw file");
     NSFileHandle* rawFileHandle;
@@ -547,20 +602,17 @@ typedef enum {
     return noErr;
 }
 
-- (void) writeImageAsTiff:(CGImageRef)image toFile:(NSString*)file
+- (UInt32) numberOfComponents
 {
-    int compression = NSTIFFCompressionLZW;  // non-lossy LZW compression
-	CFMutableDictionaryRef mSaveMetaAndOpts = CFDictionaryCreateMutable(nil, 0,
-																		&kCFTypeDictionaryKeyCallBacks,  &kCFTypeDictionaryValueCallBacks);
-	CFMutableDictionaryRef tiffProfsMut = CFDictionaryCreateMutable(nil, 0,
-																	&kCFTypeDictionaryKeyCallBacks,  &kCFTypeDictionaryValueCallBacks);
-	CFDictionarySetValue(tiffProfsMut, kCGImagePropertyTIFFCompression, CFNumberCreate(NULL, kCFNumberIntType, &compression));
-	CFDictionarySetValue(mSaveMetaAndOpts, kCGImagePropertyTIFFDictionary, tiffProfsMut);
+    NSString* scanMode = [self.saneOptions[kSaneScanMode] value];
+    UInt32 numberOfComponents = 0;
     
-	NSURL *outURL = [[NSURL alloc] initFileURLWithPath:file];
-	CGImageDestinationRef dr = CGImageDestinationCreateWithURL((__bridge CFURLRef)outURL, (__bridge CFStringRef)@"public.tiff" , 1, NULL);
-	CGImageDestinationAddImage(dr, image, mSaveMetaAndOpts);
-	CGImageDestinationFinalize(dr);
+    if ([scanMode isEqualToString:@"Color"])
+        numberOfComponents = 3;
+    else if ([scanMode isEqualToString:@"Gray"] || [scanMode isEqualToString:@"Lineart"])
+        numberOfComponents = 1;
+    
+    return numberOfComponents;
 }
 
 @end
@@ -569,7 +621,6 @@ typedef enum {
 
 - (void) showWarmUpMessage
 {
-    // TODO: this probbably leaks the dictinonary
     ICASendNotificationPB notePB = {};
     NSMutableDictionary* dict = [@{
             (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
@@ -591,7 +642,7 @@ typedef enum {
     } mutableCopy];
     notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
     
-	ICDSendNotification( &notePB );
+	ICDSendNotification(&notePB);
 }
 
 - (void) pageDoneMessage
@@ -641,9 +692,9 @@ typedef enum {
 - (void) createColorSpaceWithSaneParameters:(SANE_Parameters*)parameters
 {
     NSString* profilePath = [NSTemporaryDirectory() stringByAppendingFormat:@"vs-%d",getpid()];
-
-    self.colorSpace = ICDCreateColorSpace(3 * parameters->depth,
-                                          3,
+    
+    self.colorSpace = ICDCreateColorSpace([self numberOfComponents] * parameters->depth,
+                                          [self numberOfComponents],
                                           self.scannerObjectInfo->icaObject,
                                           (__bridge CFStringRef)(self.colorSyncMode),
                                           NULL,
@@ -661,8 +712,8 @@ typedef enum {
     h.imageHeight          = parameters->lines;
     h.bytesPerRow          = parameters->bytes_per_line;
     h.bitsPerComponent     = parameters->depth;
-    h.bitsPerPixel         = 3 * parameters->depth;
-    h.numberOfComponents   = 3;
+    h.bitsPerPixel         = [self numberOfComponents] * parameters->depth;
+    h.numberOfComponents   = [self numberOfComponents];
     h.cgColorSpaceModel    = CGColorSpaceGetModel(self.colorSpace);
     h.bitmapInfo           = kCGImageAlphaNone;
     h.dpi                  = 75;
@@ -686,7 +737,7 @@ typedef enum {
     CGImageRef image = CGImageCreate(parameters->pixels_per_line,
                                      parameters->lines,
                                      parameters->depth,
-                                     3 * parameters->depth,
+                                     [self numberOfComponents] * parameters->depth,
                                      parameters->bytes_per_line,
                                      self.colorSpace,
                                      kCGImageAlphaNone,

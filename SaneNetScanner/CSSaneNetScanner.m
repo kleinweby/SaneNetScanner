@@ -46,6 +46,8 @@ typedef enum {
 @property (nonatomic) NSURL* documentURL;
 @property (nonatomic) NSString* documentType;
 
+- (UInt32) numberOfComponents;
+
 @end
 
 @interface CSSaneNetScanner (Progress)
@@ -313,6 +315,9 @@ typedef enum {
         NSString* syncMode = dict[@"ColorSyncMode"];
         if ([syncMode isEqualToString:@"scanner.reflective.RGB.positive"]) {
             option.value = @"Color";
+        }
+        else if ([syncMode isEqualToString:@"scanner.reflective.Gray.positive"]) {
+            option.value = @"Gray";
         }
         else {
             Log(@"Unkown colorsyncmode %@", syncMode);
@@ -597,6 +602,19 @@ typedef enum {
     return noErr;
 }
 
+- (UInt32) numberOfComponents
+{
+    NSString* scanMode = [self.saneOptions[kSaneScanMode] value];
+    UInt32 numberOfComponents = 0;
+    
+    if ([scanMode isEqualToString:@"Color"])
+        numberOfComponents = 3;
+    else if ([scanMode isEqualToString:@"Gray"] || [scanMode isEqualToString:@"Lineart"])
+        numberOfComponents = 1;
+    
+    return numberOfComponents;
+}
+
 @end
 
 @implementation CSSaneNetScanner (Progress)
@@ -674,9 +692,9 @@ typedef enum {
 - (void) createColorSpaceWithSaneParameters:(SANE_Parameters*)parameters
 {
     NSString* profilePath = [NSTemporaryDirectory() stringByAppendingFormat:@"vs-%d",getpid()];
-
-    self.colorSpace = ICDCreateColorSpace(3 * parameters->depth,
-                                          3,
+    
+    self.colorSpace = ICDCreateColorSpace([self numberOfComponents] * parameters->depth,
+                                          [self numberOfComponents],
                                           self.scannerObjectInfo->icaObject,
                                           (__bridge CFStringRef)(self.colorSyncMode),
                                           NULL,
@@ -694,8 +712,8 @@ typedef enum {
     h.imageHeight          = parameters->lines;
     h.bytesPerRow          = parameters->bytes_per_line;
     h.bitsPerComponent     = parameters->depth;
-    h.bitsPerPixel         = 3 * parameters->depth;
-    h.numberOfComponents   = 3;
+    h.bitsPerPixel         = [self numberOfComponents] * parameters->depth;
+    h.numberOfComponents   = [self numberOfComponents];
     h.cgColorSpaceModel    = CGColorSpaceGetModel(self.colorSpace);
     h.bitmapInfo           = kCGImageAlphaNone;
     h.dpi                  = 75;
@@ -719,7 +737,7 @@ typedef enum {
     CGImageRef image = CGImageCreate(parameters->pixels_per_line,
                                      parameters->lines,
                                      parameters->depth,
-                                     3 * parameters->depth,
+                                     [self numberOfComponents] * parameters->depth,
                                      parameters->bytes_per_line,
                                      self.colorSpace,
                                      kCGImageAlphaNone,

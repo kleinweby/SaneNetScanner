@@ -38,14 +38,17 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
 
 @synthesize value = _value;
 
-+ (NSArray*) saneOptionsForHandle:(SANE_Handle)handle
++ (NSDictionary*) saneOptionsForHandle:(SANE_Handle)handle
 {
+    NSParameterAssert(handle != 0);
     SANE_Int number;
-    NSMutableArray* options = [NSMutableArray array];
+    NSMutableDictionary* options = [NSMutableDictionary dictionary];
     
     for (number = 0;; number++) {
-        const SANE_Option_Descriptor* descriptor =
-        sane_get_option_descriptor(handle, number);
+        const SANE_Option_Descriptor* descriptor;
+        CSSaneOption* option;
+        
+        descriptor = sane_get_option_descriptor(handle, number);
         
         // Last descriptor
         if (descriptor == NULL)
@@ -55,18 +58,25 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
         if (descriptor->type == SANE_TYPE_GROUP)
             continue;
         
-        [options addObject:[[self alloc] initWithHandle:handle
-                                                 number:number
-                                          andDescriptor:descriptor]];
+        option = [[self alloc] initWithHandle:handle
+                                       number:number
+                                andDescriptor:descriptor];
+        
+        NSAssert(option, @"Could not create sane options wrapper");
+        NSAssert(options[option.name] == nil, @"Option with that name already exists");
+        
+        options[option.name] = option;
     }
     
-    return options;
+    return [options copy];
 }
 
 - (id)initWithHandle:(SANE_Handle)handle
               number:(SANE_Int)number
        andDescriptor:(const SANE_Option_Descriptor*)descriptor
 {
+    NSParameterAssert(handle != 0);
+    NSParameterAssert(descriptor != NULL);
     self = [super init];
     if (self) {
         self.name = [NSString stringWithUTF8String:descriptor->name];

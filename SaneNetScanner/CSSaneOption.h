@@ -20,7 +20,7 @@ extern NSString* kSaneBottomRightY;
 
 @interface CSSaneOption : NSObject
 
-+ (NSArray*) saneOptionsForHandle:(SANE_Handle)handle;
++ (NSDictionary*) saneOptionsForHandle:(SANE_Handle)handle;
 
 @property (nonatomic, copy, readonly) NSString* name;
 

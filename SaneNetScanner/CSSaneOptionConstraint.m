@@ -25,6 +25,7 @@
 
 - (void) addToDeviceDictionary:(NSMutableDictionary*)dict
 {
+    NSAssert(false, @"Not implemented");
 }
 
 @end

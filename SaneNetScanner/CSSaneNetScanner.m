@@ -366,7 +366,7 @@ typedef enum {
         }
     }
     
-    if (dict[@"offsetX"]) {
+    if (dict[@"offsetY"]) {
         CSSaneOption* option = self.saneOptions[kSaneTopLeftY];
         
         if (unit == 1 /* Centimeter */) {

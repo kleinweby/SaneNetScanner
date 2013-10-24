@@ -29,10 +29,10 @@
             
             for (SANE_Word i = 1; i < length + 1; i++) {
                 if (descriptor->type == SANE_TYPE_FIXED) {
-                    [values addObject:[NSNumber numberWithDouble:SANE_UNFIX(descriptor->constraint.word_list[i])]];
+                    [values addObject:@SANE_UNFIX(descriptor->constraint.word_list[i])];
                 }
                 else if (descriptor->type == SANE_TYPE_INT) {
-                    [values addObject:[NSNumber numberWithInt:descriptor->constraint.word_list[i]]];
+                    [values addObject:@(descriptor->constraint.word_list[i])];
                 }
                 else {
                     assert(false);
@@ -48,7 +48,7 @@
             while (*ptr != NULL) {
                 const char* const str = *ptr;
                 
-                [values addObject:[NSString stringWithUTF8String:str]];
+                [values addObject:@(str)];
                 
                 ptr++;
             }

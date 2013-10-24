@@ -79,7 +79,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
     NSParameterAssert(descriptor != NULL);
     self = [super init];
     if (self) {
-        self.name = [NSString stringWithUTF8String:descriptor->name];
+        self.name = @(descriptor->name);
         
         self.descriptor = descriptor;
         self.saneHandle = handle;
@@ -123,7 +123,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
         
         // Only one value
         if (self.descriptor->size == sizeof(SANE_Int)) {
-            _value = [NSNumber numberWithDouble:SANE_UNFIX(values[0])];
+            _value = @SANE_UNFIX(values[0]);
         }
         // Multiple values
         else {
@@ -132,7 +132,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
             
             for (NSUInteger i = 0; i < numberOfValues; i++) {
                 [valueArray addObject:
-                 [NSNumber numberWithDouble:SANE_UNFIX(values[i])]];
+                 @SANE_UNFIX(values[i])];
             }
             
             _value = valueArray;
@@ -160,7 +160,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
         
         // Only one value
         if (self.descriptor->size == sizeof(SANE_Int)) {
-            _value = [NSNumber numberWithInt:values[0]];
+            _value = @(values[0]);
         }
         // Multiple values
         else {
@@ -169,7 +169,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
             
             for (NSUInteger i = 0; i < numberOfValues; i++) {
                 [valueArray addObject:
-                 [NSNumber numberWithInt:values[i]]];
+                 @(values[i])];
             }
             
             _value = valueArray;
@@ -195,7 +195,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
             return;
         }
         
-        _value = [NSString stringWithUTF8String:value];
+        _value = @(value);
         free(value);
     }
     else if (self.descriptor->type == SANE_TYPE_BOOL) {
@@ -218,7 +218,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
         
         // Only one value
         if (self.descriptor->size == sizeof(SANE_Bool)) {
-            _value = [NSNumber numberWithInt:values[0]];
+            _value = @(values[0]);
         }
         // Multiple values
         else {
@@ -227,7 +227,7 @@ NSString* kSaneBottomRightY = (NSString*)CFSTR(SANE_NAME_SCAN_BR_Y);
             
             for (NSUInteger i = 0; i < numberOfValues; i++) {
                 [valueArray addObject:
-                 [NSNumber numberWithInt:values[i]]];
+                 @(values[i])];
             }
             
             _value = valueArray;

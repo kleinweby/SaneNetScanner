@@ -159,13 +159,11 @@ typedef enum {
     // Add kICAUserAssignedDeviceNameKey.  Since this key is a simple NSString,
     // the value may be of any length.  This key supercedes any name already
     // provided in the device information before, which is limited to 32 characters.
-    [dict setObject:self.prettyName
-             forKey:(NSString*)kICAUserAssignedDeviceNameKey];
+    dict[(NSString*)kICAUserAssignedDeviceNameKey] = self.prettyName;
     
     // Add key indicating that the module supports using the ICA Raw File
     // as a backing store for image io
-    [dict setObject:[NSNumber numberWithInt:1]
-             forKey:@"supportsICARawFileFormat"];
+    dict[@"supportsICARawFileFormat"] = @1;
     
     Log(@"addPropertiesToDictitonary:%@", dict);
     
@@ -223,7 +221,7 @@ typedef enum {
                 if ([deviceDict[@"ICAP_PHYSICALWIDTH"][@"value"] doubleValue] > width) {
                     deviceDict[@"ICAP_PHYSICALWIDTH"] = @{
                     @"type": @"TWON_ONEVALUE",
-                    @"value": [NSNumber numberWithDouble:width]
+                    @"value": @(width)
                     };
                 }
             }
@@ -231,7 +229,7 @@ typedef enum {
             else {
                 deviceDict[@"ICAP_PHYSICALWIDTH"] = @{
                 @"type": @"TWON_ONEVALUE",
-                @"value": [NSNumber numberWithDouble:width]
+                @"value": @(width)
                 };
             }
         }
@@ -250,7 +248,7 @@ typedef enum {
                 if ([deviceDict[@"ICAP_PHYSICALHEIGHT"][@"value"] doubleValue] > height) {
                     deviceDict[@"ICAP_PHYSICALHEIGHT"] = @{
                     @"type": @"TWON_ONEVALUE",
-                    @"value": [NSNumber numberWithDouble:height]
+                    @"value": @(height)
                     };
                 }
             }
@@ -258,7 +256,7 @@ typedef enum {
             else {
                 deviceDict[@"ICAP_PHYSICALHEIGHT"] = @{
                 @"type": @"TWON_ONEVALUE",
-                @"value": [NSNumber numberWithDouble:height]
+                @"value": @(height)
                 };
             }
         }
@@ -276,8 +274,7 @@ typedef enum {
         };
     }
     
-    [dict setObject:deviceDict
-             forKey:@"device"];
+    dict[@"device"] = deviceDict;
     self.deviceProperties = deviceDict;
     
     Log(@"Updated parameters %@", dict);
@@ -331,7 +328,7 @@ typedef enum {
         if (unit == 1 /* Centimeter */) {
             // Convert dpcm to dpi
             // 1 dpcm = 2,54 dpi
-            option.value = [NSNumber numberWithDouble:[dict[@"ICAP_XRESOLUTION"][@"value"] doubleValue] / 2.54];
+            option.value = @([dict[@"ICAP_XRESOLUTION"][@"value"] doubleValue] / 2.54);
         }
         else if (unit == 0 /* Inches */) {
             // Great nothing to to here =)
@@ -358,11 +355,11 @@ typedef enum {
 
         if (unit == 1 /* Centimeter */) {
             // Convert cm to mm
-            option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 10];
+            option.value = @([dict[@"offsetX"] doubleValue] * 10);
         }
         else if (unit == 0 /* Inches */) {
             // Convert inches to mm
-            option.value = [NSNumber numberWithDouble:[dict[@"offsetX"] doubleValue] * 25.4];
+            option.value = @([dict[@"offsetX"] doubleValue] * 25.4);
         }
     }
     
@@ -371,11 +368,11 @@ typedef enum {
         
         if (unit == 1 /* Centimeter */) {
             // Convert cm to mm
-            option.value = [NSNumber numberWithDouble:[dict[@"offsetY"] doubleValue] * 10];
+            option.value = @([dict[@"offsetY"] doubleValue] * 10);
         }
         else if (unit == 0 /* Inches */) {
             // Convert inches to mm
-            option.value = [NSNumber numberWithDouble:[dict[@"offsetY"] doubleValue] * 25.4];
+            option.value = @([dict[@"offsetY"] doubleValue] * 25.4);
         }
     }
     
@@ -385,11 +382,11 @@ typedef enum {
         double value = [dict[@"offsetX"] doubleValue] + [dict[@"width"] doubleValue];
         if (unit == 1 /* Centimeter */) {
             // Convert cm to mm
-            option.value = [NSNumber numberWithDouble:value * 10];
+            option.value = @(value * 10);
         }
         else if (unit == 0 /* Inches */) {
             // Convert inches to mm
-            option.value = [NSNumber numberWithDouble:value * 25.4];
+            option.value = @(value * 25.4);
         }
     }
     
@@ -399,11 +396,11 @@ typedef enum {
         double value = [dict[@"offsetY"] doubleValue] + [dict[@"height"] doubleValue];
         if (unit == 1 /* Centimeter */) {
             // Convert cm to mm
-            option.value = [NSNumber numberWithDouble:value * 10];
+            option.value = @(value * 10);
         }
         else if (unit == 0 /* Inches */) {
             // Convert inches to mm
-            option.value = [NSNumber numberWithDouble:value * 25.4];
+            option.value = @(value * 25.4);
         }
     }
         
@@ -537,7 +534,7 @@ typedef enum {
         if (self.progressNotifications != ProgressNotificationsNone) {
             ICASendNotificationPB notePB = {};
             NSMutableDictionary* d = [@{
-                                      (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+                                      (id)kICANotificationICAObjectKey: @(self.scannerObjectInfo->icaObject),
                                       (id)kICANotificationTypeKey: (id)kICANotificationTypeScanProgressStatus
                                       } mutableCopy];
             
@@ -623,7 +620,7 @@ typedef enum {
 {
     ICASendNotificationPB notePB = {};
     NSMutableDictionary* dict = [@{
-            (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+            (id)kICANotificationICAObjectKey: @(self.scannerObjectInfo->icaObject),
             (id)kICANotificationTypeKey: (id)kICANotificationTypeDeviceStatusInfo,
             (id)kICANotificationSubTypeKey: (id)kICANotificationSubTypeWarmUpStarted
     } mutableCopy];
@@ -636,7 +633,7 @@ typedef enum {
 {
     ICASendNotificationPB notePB = {};
     NSMutableDictionary* dict = [@{
-        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationICAObjectKey: @(self.scannerObjectInfo->icaObject),
         (id)kICANotificationTypeKey: (id)kICANotificationTypeDeviceStatusInfo,
         (id)kICANotificationSubTypeKey: (id)kICANotificationSubTypeWarmUpDone
     } mutableCopy];
@@ -649,7 +646,7 @@ typedef enum {
 {
     ICASendNotificationPB notePB = {};
     NSMutableDictionary* dict = [@{
-        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationICAObjectKey: @(self.scannerObjectInfo->icaObject),
         (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerPageDone,
     } mutableCopy];
     notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
@@ -665,7 +662,7 @@ typedef enum {
 {
     ICASendNotificationPB notePB = {};
     NSMutableDictionary* dict = [@{
-        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationICAObjectKey: @(self.scannerObjectInfo->icaObject),
         (id)kICANotificationTypeKey: (id)kICANotificationTypeScannerScanDone
     } mutableCopy];
     notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;
@@ -677,7 +674,7 @@ typedef enum {
 {
     ICASendNotificationPB notePB = {};
     NSMutableDictionary* dict = [@{
-        (id)kICANotificationICAObjectKey: [NSNumber numberWithUnsignedInt:self.scannerObjectInfo->icaObject],
+        (id)kICANotificationICAObjectKey: @(self.scannerObjectInfo->icaObject),
         (id)kICANotificationTypeKey: (id)kICANotificationTypeTransactionCanceled
     } mutableCopy];
     notePB.notificationDictionary = (__bridge CFMutableDictionaryRef)dict;

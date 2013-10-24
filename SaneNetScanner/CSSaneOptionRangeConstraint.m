@@ -27,14 +27,14 @@
                descriptor->type == SANE_TYPE_FIXED);
         
         if (descriptor->type == SANE_TYPE_INT) {
-            self.minValue = [NSNumber numberWithInt:descriptor->constraint.range->min];
-            self.maxValue = [NSNumber numberWithInt:descriptor->constraint.range->max];
-            self.step = [NSNumber numberWithInt:descriptor->constraint.range->quant];
+            self.minValue = @(descriptor->constraint.range->min);
+            self.maxValue = @(descriptor->constraint.range->max);
+            self.step = @(descriptor->constraint.range->quant);
         }
         else {
-            self.minValue = [NSNumber numberWithDouble:SANE_UNFIX(descriptor->constraint.range->min)];
-            self.maxValue = [NSNumber numberWithDouble:SANE_UNFIX(descriptor->constraint.range->max)];
-            self.step = [NSNumber numberWithDouble:SANE_UNFIX(descriptor->constraint.range->quant)];
+            self.minValue = @SANE_UNFIX(descriptor->constraint.range->min);
+            self.maxValue = @SANE_UNFIX(descriptor->constraint.range->max);
+            self.step = @SANE_UNFIX(descriptor->constraint.range->quant);
         }
     }
     return self;
